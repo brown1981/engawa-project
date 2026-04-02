@@ -64,35 +64,45 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      // 1. Fetch Agent Status
-      const statusRes = await fetch('/api/status');
-      if (!statusRes.ok) throw new Error('Status sync failed');
-      const statusJson = await statusRes.json();
+      const { supabase } = await import('../lib/supabase');
+      
+      const { data: agents, error: agentsError } = await supabase
+        .from('agents')
+        .select('*')
+        .order('id', { ascending: true });
+      if (agentsError) throw agentsError;
 
-      // 2. Fetch Aggregated Financials
-      const financialRes = await fetch('/api/financials');
-      let financialData = {
-          kpis: {
-              dscr: { value: 1.84, target: 1.71, trend: 'up' as const },
-              cashFlow: { value: 74200, target: 74000, trend: 'up' as const },
-              efficiency: { value: 93, target: 95, trend: 'neutral' as const }
-          }
-      };
+      const { data: kpis, error: kpisError } = await supabase
+        .from('kpis')
+        .select('*');
+      if (kpisError) throw kpisError;
 
-      if (financialRes.ok) {
-          const fJson = await financialRes.json();
-          financialData = {
-              kpis: {
-                  dscr: { value: fJson.summary.monthlyReturn / 2.3, target: 1.71, trend: 'up' },
-                  cashFlow: { value: fJson.summary.totalAssets / 12, target: 74000, trend: 'up' },
-                  efficiency: { value: 98, target: 95, trend: 'neutral' }
-              }
-          };
-      }
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(50);
+      if (messagesError) throw messagesError;
+
+      const kpiMap = (kpis || []).reduce((acc: any, kpi: any) => {
+        acc[kpi.id] = {
+          value: Number(kpi.value),
+          target: Number(kpi.target),
+          trend: kpi.trend as 'up' | 'down' | 'neutral'
+        };
+        return acc;
+      }, {});
 
       setData({
-        ...statusJson,
-        ...financialData
+        agents: agents as Agent[],
+        discussion: (messages || []).reverse() as ChatMessage[],
+        kpis: {
+          dscr: kpiMap.dscr || { value: 1.84, target: 1.71, trend: 'up' },
+          cashFlow: kpiMap.cash_flow || { value: 82400, target: 74000, trend: 'up' },
+          efficiency: kpiMap.efficiency || { value: 92, target: 95, trend: 'down' }
+        },
+        batchTasks: { pending: 0, items: [] },
+        serverTime: new Date().toISOString()
       });
       setError(null);
     } catch (err) {
@@ -102,9 +112,11 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 3000);
-    return () => clearInterval(interval);
+    if (typeof window !== 'undefined') {
+      fetchData();
+      const interval = setInterval(fetchData, 3000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   if (!data) {
