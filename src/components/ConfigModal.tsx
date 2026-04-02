@@ -32,7 +32,14 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
         try {
           const { data, error } = await supabase.from('system_config').select('*').limit(1).maybeSingle();
           if (data && data.config_data) {
-            setConfig(data.config_data);
+            setConfig(prev => ({
+              ...prev,
+              ...data.config_data,
+              miningPool: { ...prev.miningPool, ...(data.config_data.miningPool || {}) },
+              exchanges: data.config_data.exchanges && data.config_data.exchanges.length > 0 ? data.config_data.exchanges : prev.exchanges,
+              aiKeys: { ...prev.aiKeys, ...(data.config_data.aiKeys || {}) },
+              agentAssignments: { ...prev.agentAssignments, ...(data.config_data.agentAssignments || {}) }
+            }));
           }
         } catch (err) {
           console.error('Failed to load config:', err);
