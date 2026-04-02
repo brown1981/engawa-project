@@ -27,14 +27,17 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
     if (isOpen) {
       setIsUnlocked(false);
       setPasscode('');
-      // Load current config from server
-      fetch('/api/status')
-        .then(res => res.json())
-        .then(data => {
-            // Note: In a real app we'd have a dedicated GET /api/config
-            // For now, we use existing patterns or simulate the load
-        })
-        .catch(err => console.error('Failed to load config:', err));
+      // Load current config from Supabase directly
+      import('../lib/supabase').then(async ({ supabase }) => {
+        try {
+          const { data, error } = await supabase.from('system_config').select('*').limit(1).maybeSingle();
+          if (data && data.config) {
+            setConfig(data.config);
+          }
+        } catch (err) {
+          console.error('Failed to load config:', err);
+        }
+      });
     }
   }, [isOpen]);
 
@@ -54,13 +57,12 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
     setSuccess(false);
 
     try {
-      const res = await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      const { supabase } = await import('../lib/supabase');
+      const { error } = await supabase
+        .from('system_config')
+        .upsert({ id: 1, config: config });
 
-      if (res.ok) {
+      if (!error) {
         setSuccess(true);
         onSave();
         setTimeout(() => {
@@ -71,6 +73,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
         throw new Error('Failed to save configuration');
       }
     } catch (err) {
+      console.error(err);
       alert('Error saving configuration.');
     } finally {
       setLoading(false);
