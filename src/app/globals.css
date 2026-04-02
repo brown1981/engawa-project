@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-background: oklch(0.12 0.02 245);
+  --color-foreground: oklch(0.95 0.01 245);
+  
+  --color-card: oklch(0.16 0.03 245 / 0.7);
+  --color-card-border: oklch(0.25 0.03 245 / 0.5);
+  
+  --color-accent: oklch(0.7 0.18 190);
+  --color-accent-glow: oklch(0.7 0.18 190 / 0.3);
+  
+  --color-danger: oklch(0.6 0.18 20);
+  --color-warning: oklch(0.8 0.16 85);
+  --color-success: oklch(0.7 0.16 150);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, oklch(0.2 0.05 245), var(--color-background));
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass-card {
+    background: var(--color-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-xl);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 20px var(--color-accent-glow);
+    transform: translateY(-2px);
+  }
+
+  .status-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .status-pulse::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(2); opacity: 0; }
+}
+
+/* Custom Utilities */
+.engawa-gradient-text {
+  background: linear-gradient(to right, var(--color-accent), oklch(0.8 0.1 245));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
