@@ -13,17 +13,24 @@ const CommanderInput: React.FC = () => {
 
     setIsSending(true);
     try {
-      const res = await fetch('/api/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: target === 'all' ? message : `@${target} ${message}`,
-          target 
-        })
-      });
+      const { supabase } = await import('../lib/supabase');
+      const finalMessage = target === 'all' ? message : `@${target} ${message}`;
+      
+      const { error } = await supabase
+        .from('messages')
+        .insert([
+          {
+            agentId: 'commander',
+            agentName: 'Commander (You)',
+            message: finalMessage,
+            timestamp: new Date().toISOString()
+          }
+        ]);
 
-      if (res.ok) {
+      if (!error) {
         setMessage('');
+      } else {
+        throw error;
       }
     } catch (error) {
       console.error('Failed to send command:', error);
