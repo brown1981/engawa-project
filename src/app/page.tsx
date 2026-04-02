@@ -95,7 +95,12 @@ export default function Home() {
 
       setData({
         agents: agents as Agent[],
-        discussion: (messages || []).reverse() as ChatMessage[],
+        discussion: (messages || []).map((m: any) => ({
+          agentId: m.agent_id,
+          agentName: m.agent_name,
+          message: m.message,
+          timestamp: m.timestamp
+        })).reverse() as ChatMessage[],
         kpis: {
           dscr: kpiMap.dscr || { value: 1.84, target: 1.71, trend: 'up' },
           cashFlow: kpiMap.cash_flow || { value: 82400, target: 74000, trend: 'up' },

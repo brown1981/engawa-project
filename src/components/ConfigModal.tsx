@@ -31,8 +31,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
       import('../lib/supabase').then(async ({ supabase }) => {
         try {
           const { data, error } = await supabase.from('system_config').select('*').limit(1).maybeSingle();
-          if (data && data.config) {
-            setConfig(data.config);
+          if (data && data.config_data) {
+            setConfig(data.config_data);
           }
         } catch (err) {
           console.error('Failed to load config:', err);
@@ -60,7 +60,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
       const { supabase } = await import('../lib/supabase');
       const { error } = await supabase
         .from('system_config')
-        .upsert({ id: 1, config: config });
+        .upsert({ id: 1, config_data: config });
 
       if (!error) {
         setSuccess(true);

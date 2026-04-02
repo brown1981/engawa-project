@@ -20,8 +20,8 @@ const CommanderInput: React.FC = () => {
         .from('messages')
         .insert([
           {
-            agentId: 'commander',
-            agentName: 'Commander (You)',
+            agent_id: 'commander',
+            agent_name: 'Commander (You)',
             message: finalMessage,
             timestamp: new Date().toISOString()
           }
