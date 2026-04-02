@@ -11,8 +11,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [passcode, setPasscode] = useState('');
   const [config, setConfig] = useState({
     miningPool: { accountName: '', apiKey: '', currency: 'zec' },
     walletAddress: '',
@@ -21,12 +19,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
     agentAssignments: { ceo: 'anthropic', cfo: 'openai', cto: 'openai', cmo: 'google', coo: 'sakana' }
   });
 
-  const CORRECT_PASSCODE = '1234';
-
   useEffect(() => {
     if (isOpen) {
-      setIsUnlocked(false);
-      setPasscode('');
       // Load current config from Supabase directly
       import('../lib/supabase').then(async ({ supabase }) => {
         try {
@@ -47,16 +41,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
       });
     }
   }, [isOpen]);
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode === CORRECT_PASSCODE) {
-      setIsUnlocked(true);
-    } else {
-      alert('Invalid Passcode');
-      setPasscode('');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,41 +87,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
         </div>
 
         <div className="overflow-y-auto pr-2 custom-scrollbar">
-          {!isUnlocked ? (
-            <form onSubmit={handleUnlock} className="space-y-8 py-8 flex flex-col items-center animate-in slide-in-from-bottom-5 duration-500">
-              <div className="space-y-4 text-center">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600">{t('passcode_label')}</h3>
-                <div className="flex gap-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={`w-4 h-4 rounded-full border-2 border-zinc-700 transition-all ${passcode.length > i ? 'bg-accent border-accent scale-125' : ''}`}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-              
-              <input 
-                type="password"
-                maxLength={4}
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value.replace(/[^0-9]/g, ''))}
-                className="absolute opacity-0 cursor-default"
-                autoFocus
-                required
-              />
-              
-              <p className="text-[10px] text-zinc-600 italic">4-digit code required to modify system nodes</p>
-              
-              <button 
-                type="submit"
-                className="mt-4 px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold uppercase tracking-widest text-[10px] rounded-full border border-zinc-700 transition-all"
-              >
-                Verify & Unlock
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500 pb-4">
+          <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500 pb-4">
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">1. F2Pool Credentials</h3>
               <div className="grid gap-4">
@@ -309,7 +259,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
               </button>
             </div>
           </form>
-        )}
         </div>
       </div>
     </div>

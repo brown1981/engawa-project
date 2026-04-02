@@ -5,8 +5,10 @@ import AgentStatusCard, { AgentStatus } from '../components/AgentStatusCard';
 import SafetyProtocolBanner from '../components/SafetyProtocolBanner';
 import KPIMonitor from '../components/KPIMonitor';
 import BusinessChatLog from '../components/BusinessChatLog';
-import CommanderInput from '../components/CommanderInput';
-import ConfigModal from '../components/ConfigModal';
+import CommanderInput from '@/components/CommanderInput';
+import ConfigModal from '@/components/ConfigModal';
+import Auth from '@/components/Auth';
+import { supabase } from '@/lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface Agent {
@@ -56,7 +58,9 @@ interface DashboardData {
   };
 }
 
-export default function Home() {
+export default function Dashboard() {
+  const [session, setSession] = useState<any>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -64,8 +68,6 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const { supabase } = await import('../lib/supabase');
-      
       const { data: agents, error: agentsError } = await supabase
         .from('agents')
         .select('*')
@@ -117,12 +119,42 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      fetchData();
-      const interval = setInterval(fetchData, 3000);
-      return () => clearInterval(interval);
-    }
+    // セッションの監視と初期化
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingSession(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    fetchData();
+    const interval = setInterval(fetchData, 3000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  // 認証チェック
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-bold animate-pulse">Establishing Secure Link...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth onAuthSuccess={() => {}} />;
+  }
 
   if (!data) {
     return (
