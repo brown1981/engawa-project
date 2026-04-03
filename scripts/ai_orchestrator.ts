@@ -109,8 +109,81 @@ async function runAnalysisLoop() {
 
   } catch (err) {
     console.error('❌ Analysis Cycle error:', err);
+  } finally {
+    // 自律トリガーのチェックを追加
+    await checkAutonomousTriggers();
   }
 }
 
 runAnalysisLoop();
 setInterval(runAnalysisLoop, ANALYSIS_INTERVAL);
+
+/**
+ * 🛰️ 自律型戦略会議 (Autonomous Strategic Meeting)
+ * エスカレーション・ロジック：2回以上の議論で同一傾向ならCEO決断、不能なら司令官へ上申
+ */
+async function runStrategicMeeting(agenda: string) {
+  console.log(`🎙️ CEO is convening a strategic meeting: "${agenda}"`);
+  
+  const thread: ChatMessage[] = [];
+  let round = 1;
+  const MAX_ROUNDS = 2; // 指示に基づき2回までのループを許容
+
+  // 1. CEO による会議招集
+  const opening = await AgentBrain.debate('ceo', [{ role: 'user', content: `会議を開始します。アジェンダ：${agenda}` }]);
+  await postMessage(opening.agentId, opening.agentName, opening.message);
+  thread.push({ role: 'assistant', content: opening.message });
+
+  while (round <= MAX_ROUNDS) {
+    console.log(`--- Debate Round ${round} ---`);
+    
+    // CFO による財務分析
+    const cfoResponse = await AgentBrain.debate('cfo', thread);
+    await postMessage(cfoResponse.agentId, cfoResponse.agentName, cfoResponse.message);
+    thread.push({ role: 'assistant', content: cfoResponse.message });
+
+    // CTO による技術的解決策の提案
+    const ctoResponse = await AgentBrain.debate('cto', thread);
+    await postMessage(ctoResponse.agentId, ctoResponse.agentName, ctoResponse.message);
+    thread.push({ role: 'assistant', content: ctoResponse.message });
+
+    // CEO が現在の議論を評価
+    const evaluation = await AgentBrain.debate('ceo', [
+      ...thread, 
+      { role: 'user', content: `【ラウンド${round}評価】合意形成はできましたか？ 決断できる場合は「決断：」で始め、継続が必要なら「継続：」、司令官への上申が必要なら「留保：」で始めてください。` }
+    ]);
+    
+    await postMessage(evaluation.agentId, evaluation.agentName, evaluation.message);
+    thread.push({ role: 'assistant', content: evaluation.message });
+
+    if (evaluation.message.includes('決断：')) {
+      console.log('✅ CEO made a decision.');
+      break;
+    } else if (evaluation.message.includes('留保：') || round === MAX_ROUNDS) {
+      console.log('⚠️ Escalating to Commander (User)...');
+      await postMessage('assistant', 'System Assistant', '【保留・上申】AIエージェント間で意見が分かれたか、重大な判断が必要なため、司令官（ユーザー）の最終承認を待ちます。ダッシュボードの指示入力をお願いします。');
+      break;
+    }
+
+    round++;
+  }
+  
+  console.log('🎯 Strategic Meeting Session Ended.');
+}
+
+/**
+ * ⚡ 自律トリガーの監視
+ */
+async function checkAutonomousTriggers() {
+  const { data: kpis } = await supabase.from('kpis').select('*');
+  const dscr = kpis?.find(k => k.id === 'dscr')?.value || 1.84;
+
+  // 重要指標が急落した場合（例：1.8未満）
+  if (dscr < 1.8) {
+    await runStrategicMeeting('【緊急】DSCR（財務安全性）が目標値を下回っています。即時改善策を策定してください。');
+  }
+}
+
+// 6時間おきに定例戦略会議を開催
+const STRATEGIC_REVIEW_INTERVAL = 6 * 60 * 60 * 1000;
+setInterval(() => runStrategicMeeting('定期戦略四半期レビュー：現状のポートフォリオと収支安定性の確認。'), STRATEGIC_REVIEW_INTERVAL);

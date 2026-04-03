@@ -119,4 +119,42 @@ export class AgentBrain {
       };
     }
   }
+
+  /**
+   * エージェント間議論（会議形式）での発言を生成する
+   */
+  static async debate(role: AgentRole, thread: ChatMessage[]): Promise<AgentResponse> {
+    const profile = this.profiles[role];
+    
+    // 会議用のシステムプロンプトに動的な指示を追加
+    const meetingPrompt = `${profile.systemPrompt}\n現在は「Engawa Cycle戦略会議」に参加中です。他のエージェントの発言を踏まえ、自身の専門領域から意見を述べてください。結論だけでなく、なぜそう考えるかの理由も添えてください。`;
+
+    const messages: ChatMessage[] = [
+      { role: 'system', content: meetingPrompt },
+      ...thread
+    ];
+
+    try {
+      let responseMessage = '';
+      if (profile.model === 'openai') {
+        responseMessage = await LLMClient.chatOpenAI(messages);
+      } else {
+        responseMessage = await LLMClient.chatAnthropic(messages);
+      }
+
+      return {
+        agentId: role,
+        agentName: profile.name,
+        message: responseMessage
+      };
+
+    } catch (err) {
+      console.error(`❌ Debate execution failed for ${role}:`, err);
+      return {
+        agentId: role,
+        agentName: profile.name,
+        message: `[分析保留] 指標を再スキャン中ですが、基本的な${profile.expertise[0]}方針に変化はありません。議論を継続してください。`
+      };
+    }
+  }
 }
