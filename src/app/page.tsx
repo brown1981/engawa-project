@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from 'react';
 import AgentStatusCard from '../components/AgentStatusCard';
 import SafetyProtocolBanner from '../components/SafetyProtocolBanner';

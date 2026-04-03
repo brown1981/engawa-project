@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import { Send, X, AlertTriangle, CheckCircle } from 'lucide-react';
 

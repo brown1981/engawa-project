@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Mail, Clock, User, Reply, Trash2, ChevronRight } from 'lucide-react';

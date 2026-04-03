@@ -1,3 +1,4 @@
+"use client";
 'use client';
 
 import { LanguageProvider } from '../contexts/LanguageContext';

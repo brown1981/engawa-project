@@ -1,3 +1,4 @@
+"use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 type Language = 'ja' | 'en' | 'fr' | 'es' | 'ko' | 'zh' | 'ru';
