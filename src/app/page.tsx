@@ -28,8 +28,20 @@ export default function Dashboard() {
   const { data, loading: loadingData, error, refresh } = useDashboard();
 
   useEffect(() => {
+    // 🔧 Fix: 5秒タイムアウト付きのセッション確認
+    // Supabase URL/Keyが本番環境で未設定の場合、getSession()が永久に待機するバグを修正
+    const sessionTimeout = setTimeout(() => {
+      console.warn('⚠️ Supabase session check timed out. Proceeding without auth.');
+      setLoadingSession(false);
+    }, 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(sessionTimeout);
       setSession(session);
+      setLoadingSession(false);
+    }).catch((err) => {
+      clearTimeout(sessionTimeout);
+      console.error('❌ Auth session error:', err);
       setLoadingSession(false);
     });
 
@@ -37,7 +49,10 @@ export default function Dashboard() {
       setSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(sessionTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loadingSession) {
@@ -50,7 +65,12 @@ export default function Dashboard() {
   }
 
   if (!session) {
-    return <Auth onAuthSuccess={() => {}} />;
+    // 🔧 Fix: onAuthSuccess が空関数だったバグを修正
+    // ログイン成功後、最新のセッションを取得してダッシュボードを表示する
+    return <Auth onAuthSuccess={async () => {
+      const { data: { session: newSession } } = await supabase.auth.getSession();
+      setSession(newSession);
+    }} />;
   }
 
   if (loadingData && !data) {
