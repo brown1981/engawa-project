@@ -1,153 +1,50 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import AgentStatusCard, { AgentStatus } from '../components/AgentStatusCard';
+import AgentStatusCard from '../components/AgentStatusCard';
 import SafetyProtocolBanner from '../components/SafetyProtocolBanner';
 import KPIMonitor from '../components/KPIMonitor';
 import BusinessChatLog from '../components/BusinessChatLog';
 import CommanderInput from '@/components/CommanderInput';
 import ConfigModal from '@/components/ConfigModal';
 import Auth from '@/components/Auth';
-import { supabase } from '@/lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDashboard } from '../hooks/useDashboard';
+import { supabase } from '@/lib/supabase';
 
-interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  status: AgentStatus;
-  lastActive: string;
-  model: string;
-  currentTask: string;
-}
-
-interface ChatMessage {
-  id: string;
-  agentId: string;
-  agentName: string;
-  message: string;
-  timestamp: string;
-}
-
-interface KPI {
-  value: number;
-  target: number;
-  trend: 'up' | 'down' | 'neutral';
-}
-
-interface DashboardData {
-  agents: Agent[];
-  discussion: ChatMessage[];
-  kpis: {
-    dscr: KPI;
-    cashFlow: KPI;
-    efficiency: KPI;
-  };
-  batchTasks: {
-    pending: number;
-    items: string[];
-  };
-  serverTime: string;
-  mining?: {
-    pool: {
-      name: string;
-      currency: string;
-      hashrate: string;
-      status: string;
-    };
-  };
-}
+// ------------------------------------------------------------------
+// 🚀 生産検証（Production Hardening）版 Dashboard
+// ------------------------------------------------------------------
 
 export default function Dashboard() {
   const [session, setSession] = useState<any>(null);
   const [loadingSession, setLoadingSession] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { t, language, setLanguage } = useLanguage();
 
-  const fetchData = async () => {
-    try {
-      const { data: agents, error: agentsError } = await supabase
-        .from('agents')
-        .select('*')
-        .order('id', { ascending: true });
-      if (agentsError) throw agentsError;
-
-      const { data: kpis, error: kpisError } = await supabase
-        .from('kpis')
-        .select('*');
-      if (kpisError) throw kpisError;
-
-      const { data: messages, error: messagesError } = await supabase
-        .from('messages')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(50);
-      if (messagesError) throw messagesError;
-
-      const kpiMap = (kpis || []).reduce((acc: any, kpi: any) => {
-        acc[kpi.id] = {
-          value: Number(kpi.value),
-          target: Number(kpi.target),
-          trend: kpi.trend as 'up' | 'down' | 'neutral'
-        };
-        return acc;
-      }, {});
-
-      setData({
-        agents: agents as Agent[],
-        discussion: (messages || []).map((m: any) => ({
-          agentId: m.agent_id,
-          agentName: m.agent_name,
-          message: m.message,
-          timestamp: m.timestamp
-        })).reverse() as ChatMessage[],
-        kpis: {
-          dscr: kpiMap.dscr || { value: 1.84, target: 1.71, trend: 'up' },
-          cashFlow: kpiMap.cash_flow || { value: 82400, target: 74000, trend: 'up' },
-          efficiency: kpiMap.efficiency || { value: 92, target: 95, trend: 'down' }
-        },
-        batchTasks: { pending: 0, items: [] },
-        serverTime: new Date().toISOString()
-      });
-      setError(null);
-    } catch (err) {
-      console.error('Fetch Error:', err);
-      setError('Real-time sync interrupted...');
-    }
-  };
+  // カスタムフックへの移行（基本の集約）
+  const { data, loading: loadingData, error, refresh } = useDashboard();
 
   useEffect(() => {
-    // セッションの監視と初期化
+    // セッションの監視（基本の徹底）
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoadingSession(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!session) return;
-
-    fetchData();
-    const interval = setInterval(fetchData, 3000);
-    return () => clearInterval(interval);
-  }, [session]);
-
-  // 認証チェック
+  // 1. 認証チェック
   if (loadingSession) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center">
         <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-bold animate-pulse">Establishing Secure Link...</p>
+        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.3em] font-bold animate-pulse tracking-[0.5em]">Establishing Secure Link...</p>
       </div>
     );
   }
@@ -156,18 +53,24 @@ export default function Dashboard() {
     return <Auth onAuthSuccess={() => {}} />;
   }
 
-  if (!data) {
+  // 2. ローディング・スケルトン（ユーザー体験の基本）
+  if (loadingData && !data) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-zinc-500 font-mono text-sm animate-pulse tracking-widest uppercase">{t('syncing')}</p>
+      <div className="min-h-screen bg-black p-8 flex flex-col gap-8">
+        <div className="animate-pulse space-y-8">
+          <div className="h-20 bg-zinc-900/50 rounded-3xl w-1/3 border border-zinc-800"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="h-40 bg-zinc-900/50 rounded-3xl border border-zinc-800"></div>
+            <div className="h-40 bg-zinc-900/50 rounded-3xl border border-zinc-800"></div>
+            <div className="h-40 bg-zinc-900/50 rounded-3xl border border-zinc-800"></div>
+          </div>
+          <div className="h-96 bg-zinc-900/50 rounded-3xl border border-zinc-800"></div>
         </div>
       </div>
     );
   }
 
-  const fallbackCount = data.agents.filter(a => a.status === 'fallback' || a.status === 'down').length;
+  const fallbackCount = data?.agents.filter(a => a.status === 'fallback' || a.status === 'down').length || 0;
 
   return (
     <main className="min-h-screen p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-1000">
@@ -182,7 +85,6 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-2xl border border-zinc-800">
-          {/* Language Switcher */}
           <select 
             value={language} 
             onChange={(e) => setLanguage(e.target.value as any)}
@@ -197,15 +99,15 @@ export default function Dashboard() {
             <option value="fr">FR</option>
           </select>
           
-          <div className="text-right px-3">
-            <div className="text-[10px] text-zinc-500 uppercase font-bold">{t('queue')}</div>
-            <div className={`text-sm font-mono ${data.batchTasks.pending  > 0 ? 'text-amber-400' : 'text-zinc-400'}`}>
-              {data.batchTasks.pending}
+          <div className="text-right px-3 border-r border-zinc-800">
+            <div className="text-[10px] text-zinc-500 uppercase font-bold">{t('status')}</div>
+            <div className="text-[10px] text-success font-black uppercase tracking-widest border border-success/20 px-1.5 rounded-md mt-0.5">
+              Live
             </div>
           </div>
           <button 
             onClick={() => setIsConfigOpen(true)}
-            className="p-3 hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-all rounded-xl border-l border-zinc-800"
+            className="p-3 hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-all rounded-xl"
             title={t('settings')}
           >
             ⚙️
@@ -216,101 +118,88 @@ export default function Dashboard() {
       <ConfigModal 
         isOpen={isConfigOpen} 
         onClose={() => setIsConfigOpen(false)} 
-        onSave={() => fetchData()}
+        onSave={() => refresh()} // 賢い再取得
       />
 
       {/* Safety Alert */}
       <SafetyProtocolBanner fallbackCount={fallbackCount} />
+      
       {error && (
-        <div className="p-2 bg-red-900/20 border border-red-900/40 text-red-500 text-[10px] font-black uppercase tracking-widest text-center rounded-lg animate-pulse">
+        <div className="p-2 bg-red-900/20 border border-red-900/40 text-red-500 text-[10px] font-black uppercase tracking-widest text-center rounded-lg animate-pulse mb-4">
            ⚠️ {error}
         </div>
       )}
 
-      {/* KPI Section - Real Data Fed */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <KPIMonitor 
-          label={t('kpi_dscr')} 
-          value={data.kpis.dscr.value} 
-          target={data.kpis.dscr.target} 
-          unit="x"
-          trend={data.kpis.dscr.trend} 
-          color="var(--color-accent)"
-        />
-        <KPIMonitor 
-          label={t('kpi_revenue')} 
-          value={data.kpis.cashFlow.value.toLocaleString()} 
-          target={data.kpis.cashFlow.target.toLocaleString()} 
-          unit="JPY"
-          trend={data.kpis.cashFlow.trend} 
-          color="var(--color-success)"
-        />
-        <KPIMonitor 
-          label={t('kpi_efficiency')} 
-          value={data.kpis.efficiency.value} 
-          target={data.kpis.efficiency.target} 
-          unit="%"
-          trend={data.kpis.efficiency.trend} 
-          color="var(--color-warning)"
-        />
-      </div>
-
-      {/* Agents Section */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="w-2 h-6 bg-accent rounded-full"></span>
-            {t('agent_team')}
-          </h2>
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1.5 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-[9px] text-green-500 font-black uppercase tracking-widest">Auto-Ops: ON</span>
-             </div>
-             <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest leading-none">Polling: 3s</span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {data.agents.map((agent) => (
-            <AgentStatusCard 
-              key={agent.id}
-              name={agent.name}
-              role={agent.role}
-              status={agent.status}
-              lastActive={agent.lastActive}
-              model={agent.model}
-              currentTask={agent.currentTask}
+      {data && (
+        <>
+          {/* KPI Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <KPIMonitor 
+              label={t('kpi_dscr')} 
+              value={data.kpis.dscr.value} 
+              target={data.kpis.dscr.target} 
+              unit="x"
+              trend={data.kpis.dscr.trend} 
+              type="accent"
             />
-          ))}
-        </div>
-      </section>
-
-      {/* Decision Intelligence Log */}
-      <section className="space-y-6">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="w-2 h-6 bg-accent rounded-full"></span>
-          Operational Strategy & Decision Log
-        </h2>
-        <BusinessChatLog messages={data.discussion} />
-        <CommanderInput />
-      </section>
-
-      {/* Night Batch Tasks */}
-      {data.batchTasks.pending > 0 && (
-        <section className="glass-card p-6 border-amber-500/20 animate-in slide-in-from-bottom-5 duration-700">
-          <h3 className="text-sm font-black uppercase tracking-widest text-amber-500 mb-4 flex items-center gap-2">
-            🌙 Scheduled Tasks Queue
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {data.batchTasks.items.map(item => (
-              <div key={item} className="p-3 bg-zinc-900/50 rounded-xl border border-zinc-800 text-[11px] font-mono text-zinc-400 flex justify-between items-center group hover:border-amber-500/30 transition-colors">
-                <span>{item}</span>
-                <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 rounded text-amber-500 font-bold border border-amber-500/10">PENDING</span>
-              </div>
-            ))}
+            <KPIMonitor 
+              label={t('kpi_revenue')} 
+              value={data.kpis.cashFlow.value.toLocaleString()} 
+              target={data.kpis.cashFlow.target.toLocaleString()} 
+              unit="JPY"
+              trend={data.kpis.cashFlow.trend} 
+              type="success"
+            />
+            <KPIMonitor 
+              label={t('kpi_efficiency')} 
+              value={data.kpis.efficiency.value} 
+              target={data.kpis.efficiency.target} 
+              unit="%"
+              trend={data.kpis.efficiency.trend} 
+              type="warning"
+            />
           </div>
-        </section>
+
+          {/* Agents Section */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="w-2 h-6 bg-accent rounded-full"></span>
+                {t('agent_team')}
+              </h2>
+              <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-[9px] text-green-500 font-bold uppercase tracking-widest">Real-time Node: Active</span>
+                 </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {data.agents.map((agent) => (
+                <AgentStatusCard 
+                  key={agent.id}
+                  name={agent.name}
+                  role={agent.role}
+                  status={agent.status}
+                  lastActive={agent.lastActive}
+                  model={agent.model}
+                  currentTask={agent.currentTask}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Decision Intelligence Log */}
+          <section className="space-y-6">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="w-2 h-6 bg-accent rounded-full"></span>
+              Operational Strategy & Decision Log
+            </h2>
+            <BusinessChatLog messages={data.discussion} />
+            <CommanderInput />
+          </section>
+        </>
       )}
     </main>
   );
