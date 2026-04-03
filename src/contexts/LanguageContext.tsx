@@ -11,7 +11,7 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   ja: {
     dashboard_title: "縁側コア | 統合司令塔",
-    tagline: "自律型企業統治システム v1.2",
+    tagline: "自律型企業統治システム v1.2.1-FORCE-SYNC",
     agent_team: "アクティブ・エージェント・チーム",
     decision_log: "意思決定インテリジェンス・フィード",
     intelligence_log: "インテリジェンス・ログ",
