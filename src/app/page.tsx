@@ -165,13 +165,13 @@ export default function Dashboard() {
                   onClick={() => setActiveTab('discussion')}
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'discussion' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  <MessageSquare size={14} /> Intelligence Log
+                  <MessageSquare size={14} /> {t('intelligence_log')}
                 </button>
                 <button
                   onClick={() => setActiveTab('mail')}
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'mail' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  <Mail size={14} /> Corp-Comm Inbox
+                  <Mail size={14} /> {t('mail_inbox')}
                 </button>
               </div>
 
@@ -180,7 +180,7 @@ export default function Dashboard() {
                   onClick={() => setIsComposeOpen(true)}
                   className="flex items-center gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-zinc-700/50"
                 >
-                  <Plus size={14} /> Draft Manifest
+                  <Plus size={14} /> {t('mail_composer')}
                 </button>
               )}
             </div>
