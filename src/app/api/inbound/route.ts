@@ -9,8 +9,9 @@ import { createClient } from '@supabase/supabase-js';
  */
 
 // Supabase クライアントの初期化 (Service Role を使用して RLS をバイパス)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // ※環境変数への追加が必要
+// Next.jsのビルド時に環境変数がなくてもエラーにならないようにフォールバックを設定
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xxxxxxxxxxxxxxxxxxxx.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-key-for-build'; 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
