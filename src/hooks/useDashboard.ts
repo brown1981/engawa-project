@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AgentStatus } from '../components/AgentStatusCard';
+import { MiningService } from '../services/mining_service';
 
 // ------------------------------------------------------------------
 // 🛠️ 型定義の基本（Types Hardening）
@@ -30,6 +31,13 @@ export interface KPI {
   trend: 'up' | 'down' | 'neutral';
 }
 
+export interface MiningStats {
+  hashrate: number;
+  payout_24h: number;
+  total_payout: number;
+  efficiency: number;
+}
+
 export interface DashboardData {
   agents: Agent[];
   discussion: ChatMessage[];
@@ -37,7 +45,9 @@ export interface DashboardData {
     dscr: KPI;
     cashFlow: KPI;
     efficiency: KPI;
+    hashrate: KPI; // 追加
   };
+  miningStats: MiningStats; // 追加
   serverTime: string;
 }
 
@@ -54,10 +64,11 @@ export function useDashboard() {
   const fetchAll = useCallback(async () => {
     try {
       // 並列実行で効率化（基本の最適化）
-      const [agentsRes, kpisRes, messagesRes] = await Promise.all([
+      const [agentsRes, kpisRes, messagesRes, miningStats] = await Promise.all([
         supabase.from('agents').select('*').order('id', { ascending: true }),
         supabase.from('kpis').select('*'),
-        supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(50)
+        supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(50),
+        MiningService.getLatestStats()
       ]);
 
       if (agentsRes.error) throw agentsRes.error;
@@ -79,8 +90,10 @@ export function useDashboard() {
         kpis: {
           dscr: kpiMap.dscr || { value: 0, target: 1, trend: 'neutral' },
           cashFlow: kpiMap.cash_flow || { value: 0, target: 1, trend: 'neutral' },
-          efficiency: kpiMap.efficiency || { value: 0, target: 1, trend: 'neutral' }
+          efficiency: kpiMap.efficiency || { value: 0, target: 1, trend: 'neutral' },
+          hashrate: { value: miningStats.hashrate, target: 150, trend: 'neutral' }
         },
+        miningStats: miningStats,
         serverTime: new Date().toISOString()
       });
       setError(null);

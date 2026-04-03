@@ -133,7 +133,7 @@ export default function Dashboard() {
       {data && (
         <>
           {/* KPI Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <KPIMonitor 
               label={t('kpi_dscr')} 
               value={data.kpis.dscr.value} 
@@ -141,6 +141,14 @@ export default function Dashboard() {
               unit="x"
               trend={data.kpis.dscr.trend} 
               type="accent"
+            />
+            <KPIMonitor 
+              label="Live Hashrate" 
+              value={data.kpis.hashrate.value.toString()} 
+              target={data.kpis.hashrate.target.toString()} 
+              unit="TH/s"
+              trend={data.kpis.hashrate.trend} 
+              type="warning"
             />
             <KPIMonitor 
               label={t('kpi_revenue')} 
@@ -158,6 +166,29 @@ export default function Dashboard() {
               trend={data.kpis.efficiency.trend} 
               type="warning"
             />
+          </div>
+
+          {/* Mining Analytics Pulse */}
+          <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-3xl p-6 flex flex-wrap items-center justify-between gap-6 backdrop-blur-sm">
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-2xl flex items-center justify-center text-2xl">💎</div>
+                <div>
+                   <div className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-1">Mining Forecast (24h)</div>
+                   <div className="text-xl font-bold text-white tracking-tight">{data.miningStats.payout_24h} <span className="text-zinc-500 text-sm">ALEO</span></div>
+                </div>
+             </div>
+             <div className="h-10 w-px bg-zinc-800 hidden md:block"></div>
+             <div>
+                <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mb-1 uppercase">Operational Pulse</div>
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 bg-success rounded-full animate-ping"></div>
+                   <span className="text-xs font-bold text-success uppercase tracking-widest">AI Team Synchronized</span>
+                </div>
+             </div>
+             <div className="text-right">
+                <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Total Mined</div>
+                <div className="text-lg font-black text-zinc-300">{data.miningStats.total_payout.toLocaleString()} <span className="text-zinc-500">ALEO</span></div>
+             </div>
           </div>
 
           {/* Agents Section */}
