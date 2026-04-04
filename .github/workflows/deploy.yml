@@ -28,48 +28,12 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        run: |
-          npm run build:cf
-          
-          # 🔍 DIAGNOSTIC: Exhaustive fact-finding mission
-          echo "==== FACT FINDING: FOLDER STRUCTURE (root) ===="
-          ls -F
-          echo "==== FACT FINDING: .open-next structure ===="
-          find .open-next -maxdepth 4
-          echo "==== FACT FINDING: .next structure ===="
-          find .next -maxdepth 4
-          echo "==== FACT FINDING: _routes.json CONTENT ===="
-          [ -f ".open-next/_routes.json" ] && cat .open-next/_routes.json
-          echo "==== FACT FINDING: ASSETS COUNT ===="
-          echo "Found in .open-next/assets: $(find .open-next/assets -type f | wc -l)"
-          echo "Found in .next/static: $(find .next/static -type f | wc -l 2>/dev/null || echo 0)"
-          
-          # Consolidate standard OpenNext output into a Cloudflare Pages compatible structure
-          rm -rf dist-cf && mkdir -p dist-cf
-          # 1. Copy static assets to root
-          # Next.js 15 standalone might put these in deep subdirs
-          cp -r .open-next/assets/* dist-cf/ 2>/dev/null || true
-          
-          # 2. Copy worker.js as _worker.js to root
-          cp .open-next/worker.js dist-cf/_worker.js
-          
-          # 3. Copy _routes.json (REQUIRED for asset routing in Pages with a worker)
-          [ -f ".open-next/_routes.json" ] && cp .open-next/_routes.json dist-cf/_routes.json
-          
-          # 4. Copy ALL internal OpenNext engine directories required by _worker.js
-          for dir in cloudflare middleware .build server-functions; do
-            if [ -d ".open-next/$dir" ]; then
-              cp -r ".open-next/$dir" dist-cf/
-            fi
-          done
-
-          echo "==== FINAL DIST-CF STRUCTURE (top level) ===="
-          ls -R dist-cf | head -n 50
-          echo "Total files in dist-cf: $(find dist-cf -type f | wc -l)"
-          echo "==========================="
-
-      - name: Deploy to Cloudflare Pages
-        env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-        run: npx wrangler pages deploy dist-cf --project-name=engawa-project --commit-dirty=true
+        run: |
+          # 1. Build for Cloudflare
+          npm run build:cf
+          
+          # 2. Deploy using the unified command (standard OpenNext / Cloudflare way)
+          # This command handles assets, routing, and workers automatically.
+          npx @opennextjs/cloudflare deploy --name engawa-project
