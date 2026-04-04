@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // True Owner Account: Do.the.carpe.diem@gmail.com,
+  // True Owner Account: 71ea3b76dd06338b937efef2f94ce158,
   "name": "engawa-project",
   "main": ".open-next/worker.js",
   "compatibility_date": "2024-09-23",
