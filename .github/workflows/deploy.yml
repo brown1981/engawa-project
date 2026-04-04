@@ -33,17 +33,27 @@ jobs:
           # Consolidate standard OpenNext output into a Cloudflare Pages compatible structure
           rm -rf dist-cf && mkdir -p dist-cf
           # 1. Copy static assets to root
-          cp -r .open-next/assets/* dist-cf/
+          # Next.js 15 standalone might put these in deep subdirs
+          cp -r .open-next/assets/* dist-cf/ 2>/dev/null || true
+          
           # 2. Copy worker.js as _worker.js to root
           cp .open-next/worker.js dist-cf/_worker.js
+          
           # 3. Copy _routes.json (REQUIRED for asset routing in Pages with a worker)
           [ -f ".open-next/_routes.json" ] && cp .open-next/_routes.json dist-cf/_routes.json
+          
           # 4. Copy ALL internal OpenNext engine directories required by _worker.js
           for dir in cloudflare middleware .build server-functions; do
             if [ -d ".open-next/$dir" ]; then
               cp -r ".open-next/$dir" dist-cf/
             fi
           done
+
+          # 🔍 DIAGNOSTIC: List everything to see why files are missing
+          echo "==== DIST-CF STRUCTURE ===="
+          ls -R dist-cf | head -n 100
+          echo "==========================="
+          echo "Total files in dist-cf: $(find dist-cf -type f | wc -l)"
 
       - name: Deploy to Cloudflare Pages
         env:
