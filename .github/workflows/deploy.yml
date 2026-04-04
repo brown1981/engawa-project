@@ -29,7 +29,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          npm run build -- --legacy-peer-deps
+          npm run build
 
       - name: Deploy to Cloudflare Pages
         env:
