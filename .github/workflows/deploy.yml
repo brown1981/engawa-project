@@ -31,12 +31,17 @@ jobs:
         run: |
           npm run build:cf
           # Consolidate standard OpenNext output into a Cloudflare Pages compatible structure
-          mkdir -p dist-cf
+          rm -rf dist-cf && mkdir -p dist-cf
+          # 1. Copy static assets to root
           cp -r .open-next/assets/* dist-cf/
+          # 2. Copy worker.js as _worker.js to root
           cp .open-next/worker.js dist-cf/_worker.js
-          # Preserve dependencies for the worker
-          cp -r .open-next/.build dist-cf/ 2>/dev/null || true
-          cp -r .open-next/server-functions dist-cf/ 2>/dev/null || true
+          # 3. Copy ALL internal OpenNext engine directories required by _worker.js
+          for dir in cloudflare middleware .build server-functions; do
+            if [ -d ".open-next/$dir" ]; then
+              cp -r ".open-next/$dir" dist-cf/
+            fi
+          done
 
       - name: Deploy to Cloudflare Pages
         env:
