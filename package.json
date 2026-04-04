@@ -8,12 +8,11 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx @cloudflare/next-on-pages",
-    "build:next": "next build",
+    "build": "next build",
+    "build:cf": "npm run build && npx @opennextjs/cloudflare",
     "start": "next start",
-    "lint": "eslint",
-    "pages:dev": "npx @cloudflare/next-on-pages@latest --watch",
-    "pages:build": "npx @cloudflare/next-on-pages@latest"
+    "lint": "next lint",
+    "pages:dev": "npx @opennextjs/cloudflare dev"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -34,6 +33,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^3",
-    "@cloudflare/next-on-pages": "^1"
+    "@opennextjs/cloudflare": "^0.5.0"
   }
 }
