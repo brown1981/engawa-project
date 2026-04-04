@@ -33,6 +33,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^3",
-    "@opennextjs/cloudflare": "^0.5.0"
+    "@opennextjs/cloudflare": "latest"
   }
 }
