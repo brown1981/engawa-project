@@ -30,11 +30,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           npm run build:cf
-          # Cloudflare Pages _worker.js pattern
-          cp .open-next/worker.js .open-next/assets/_worker.js
+          # Consolidate standard OpenNext output into a Cloudflare Pages compatible structure
+          mkdir -p dist-cf
+          cp -r .open-next/assets/* dist-cf/
+          cp .open-next/worker.js dist-cf/_worker.js
+          # Preserve dependencies for the worker
+          cp -r .open-next/.build dist-cf/ 2>/dev/null || true
+          cp -r .open-next/server-functions dist-cf/ 2>/dev/null || true
 
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-        run: npx wrangler pages deploy .open-next/assets --project-name=engawa-project --commit-dirty=true
+        run: npx wrangler pages deploy dist-cf --project-name=engawa-project --commit-dirty=true
