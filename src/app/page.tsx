@@ -8,6 +8,7 @@ import CommanderInput from '@/components/CommanderInput';
 import ConfigModal from '@/components/ConfigModal';
 import EmailInbox from '@/components/EmailInbox';
 import EmailComposer from '@/components/EmailComposer';
+import AICostWidget from '@/components/AICostWidget';
 import Auth from '@/components/Auth';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDashboard } from '../hooks/useDashboard';
@@ -153,6 +154,9 @@ export default function Dashboard() {
             <KPIMonitor label={t('kpi_revenue')} value={data.kpis.cashFlow.value.toLocaleString()} target={data.kpis.cashFlow.target.toLocaleString()} unit="JPY" trend={data.kpis.cashFlow.trend} type="success"/>
             <KPIMonitor label={t('kpi_efficiency')} value={data.kpis.efficiency.value} target={data.kpis.efficiency.target} unit="%" trend={data.kpis.efficiency.trend} type="warning"/>
           </div>
+
+          {/* AI Cost Monitor */}
+          <AICostWidget />
 
           {/* Agents Section */}
           <section className="space-y-6">

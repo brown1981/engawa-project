@@ -12,6 +12,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [testResults, setTestResults] = useState<Record<string, { status: 'idle' | 'testing' | 'ok' | 'error'; message: string }>>({
+    openai: { status: 'idle', message: '' },
+    anthropic: { status: 'idle', message: '' },
+  });
   const [config, setConfig] = useState({
     miningPool: { accountName: '', apiKey: '', currency: 'zec' },
     walletAddress: '',
@@ -42,6 +46,24 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
       });
     }
   }, [isOpen]);
+
+  const handleTestConnection = async (provider: 'openai' | 'anthropic') => {
+    setTestResults(prev => ({ ...prev, [provider]: { status: 'testing', message: '接続確認中...' } }));
+    try {
+      const res = await fetch('/api/ai-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      const data = await res.json() as any;
+      setTestResults(prev => ({
+        ...prev,
+        [provider]: { status: data.success ? 'ok' : 'error', message: data.message || data.error || 'Unknown error' }
+      }));
+    } catch {
+      setTestResults(prev => ({ ...prev, [provider]: { status: 'error', message: 'ネットワークエラー' } }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,23 +204,47 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
               <div className="grid gap-3">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-zinc-500 ml-1">OpenAI Key (GPT-4o)</label>
-                  <input 
-                    type="password" 
-                    value={config.aiKeys.openai}
-                    onChange={(e) => setConfig({...config, aiKeys: {...config.aiKeys, openai: e.target.value}})}
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-400 transition-colors"
-                    placeholder="sk-..."
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="password" 
+                      value={config.aiKeys.openai}
+                      onChange={(e) => setConfig({...config, aiKeys: {...config.aiKeys, openai: e.target.value}})}
+                      className="flex-1 bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-400 transition-colors"
+                      placeholder="sk-..."
+                    />
+                    <button type="button" onClick={() => handleTestConnection('openai')}
+                      disabled={testResults.openai.status === 'testing'}
+                      className="px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest bg-purple-900/40 hover:bg-purple-800/40 text-purple-400 border border-purple-800/40 transition-all whitespace-nowrap">
+                      {testResults.openai.status === 'testing' ? '...' : 'Test'}
+                    </button>
+                  </div>
+                  {testResults.openai.status !== 'idle' && (
+                    <p className={`text-[8px] font-bold ml-1 ${testResults.openai.status === 'ok' ? 'text-green-400' : testResults.openai.status === 'error' ? 'text-red-400' : 'text-zinc-400'}`}>
+                      {testResults.openai.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-zinc-500 ml-1">Anthropic Key (Claude 3.5)</label>
-                  <input 
-                    type="password" 
-                    value={config.aiKeys.anthropic}
-                    onChange={(e) => setConfig({...config, aiKeys: {...config.aiKeys, anthropic: e.target.value}})}
-                    className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-400 transition-colors"
-                    placeholder="sk-ant-..."
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="password" 
+                      value={config.aiKeys.anthropic}
+                      onChange={(e) => setConfig({...config, aiKeys: {...config.aiKeys, anthropic: e.target.value}})}
+                      className="flex-1 bg-zinc-900/50 border border-zinc-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-400 transition-colors"
+                      placeholder="sk-ant-..."
+                    />
+                    <button type="button" onClick={() => handleTestConnection('anthropic')}
+                      disabled={testResults.anthropic.status === 'testing'}
+                      className="px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest bg-purple-900/40 hover:bg-purple-800/40 text-purple-400 border border-purple-800/40 transition-all whitespace-nowrap">
+                      {testResults.anthropic.status === 'testing' ? '...' : 'Test'}
+                    </button>
+                  </div>
+                  {testResults.anthropic.status !== 'idle' && (
+                    <p className={`text-[8px] font-bold ml-1 ${testResults.anthropic.status === 'ok' ? 'text-green-400' : testResults.anthropic.status === 'error' ? 'text-red-400' : 'text-zinc-400'}`}>
+                      {testResults.anthropic.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-zinc-500 ml-1">Google Gemini Key</label>

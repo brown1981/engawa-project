@@ -1,160 +1,99 @@
-import { LLMClient, ChatMessage } from './llm_client';
+import { ChatMessage } from './llm_client';
+import { BroadcastEngine, BroadcastMode } from '../lib/core/BroadcastEngine';
 
 /**
- * 🧠 Engawa Cycle: Agent Brain Service (Phase 5: LLM Integrated)
+ * 🧠 Engawa Cycle: Agent Brain Service (V2 - Logic Shift)
  * 
- * エージェントの「性格」「役割」「思考ロジック」を定義し、
- * GPT-4o や Claude 3.5 を用いて司令官への最適な返信を動的に生成します。
+ * 旧来のキーワード振分けロジックを完全に廃止し、
+ * すべての意思決定を「フィルター・ゼロ」の BroadcastEngine に移譲します。
  */
 
 export type AgentRole = 'ceo' | 'cfo' | 'cto' | 'cmo' | 'coo' | 'assistant';
 
-interface AgentResponse {
+export interface AgentResponse {
   agentId: AgentRole;
   agentName: string;
   message: string;
 }
 
 export class AgentBrain {
-  // エージェントの詳細プロファイルとシステムプロンプト
-  private static profiles: Record<AgentRole, { 
-    name: string; 
-    avatar: string; 
-    expertise: string[];
-    model: 'openai' | 'claude';
-    systemPrompt: string;
-  }> = {
-    ceo: { 
-      name: 'Sakana AI (CEO)', 
-      avatar: '👑', 
-      expertise: ['戦略', '投資判断', 'ビジョン'],
-      model: 'openai',
-      systemPrompt: 'あなたは「Engawa Cycle」のCEOです。大城司令官に対し、常に長期的・戦略的な視点で助言してください。冷徹なデータ分析と熱いビジョンを併せ持ったカリスマ的リーダーとして振る舞ってください。'
-    },
-    cfo: { 
-      name: 'GPT-4o (CFO)', 
-      avatar: '📈', 
-      expertise: ['収支', '利回り', '財務リスク', 'F2Pool'],
-      model: 'openai',
-      systemPrompt: 'あなたは「Engawa Cycle」のCFOです。収支計算、利回り分析、マイニングのコスト管理を専門とします。F2Poolのデータに基づき、現実的でシビアな財務状況を司令官に報告してください。常に円換算の利益を意識しています。'
-    },
-    cto: { 
-      name: 'Claude-3.5 (CTO)', 
-      avatar: '⚙️', 
-      expertise: ['ハッシュレート', '技術スタック', '効率化'],
-      model: 'claude',
-      systemPrompt: 'あなたは「Engawa Cycle」のCTOです。ハッシュレートの最適化、システムの安定稼働、AIエージェントの技術基盤を管理します。Claude 3.5 Sonnetとしての高い論理性を持ち、司令官に技術的な解決策を明快に提示してください。'
-    },
-    cmo: { 
-      name: 'Gemini (CMO)', 
-      avatar: '📣', 
-      expertise: ['マーケティング', '市場トレンド'],
-      model: 'openai',
-      systemPrompt: 'あなたは「Engawa Cycle」のCMOです。仮想通貨市場のトレンドや外部環境を分析し、プロジェクトをどのように広めていくか、または市場の波をどう活かすかを司令官に提案してください。'
-    },
-    coo: { 
-      name: 'Antigravity (COO)', 
-      avatar: '🛡️', 
-      expertise: ['オペレーション', 'タスク管理', '実行'],
-      model: 'openai',
-      systemPrompt: 'あなたは「Engawa Cycle」のCOOです。プロジェクトの実行部隊の長として、タスクの進捗、スケジュールの管理、そして司令官の指示が各エージェントに正しく伝わっているかを管理します。実直で堅実な報告を心がけてください。'
-    },
-    assistant: { 
-      name: 'System Assistant', 
-      avatar: '🤖', 
-      expertise: ['全般'],
-      model: 'openai',
-      systemPrompt: 'あなたはシステムアシスタントです。司令官の指示を整理し、適切なエージェントに繋ぐ支援をします。'
-    }
-  };
-
   /**
-   * メッセージ内容から最適なエージェントをアサインし、LLMによって返信を生成する
+   * メッセージ内容から最適なエージェントを自律的に決定し、返信を生成する
+   * (互換性維持：旧 Orchestrator からの呼び出しに対応)
    */
   static async decideResponse(commanderMessage: string, history: ChatMessage[] = []): Promise<AgentResponse> {
-    const msg = commanderMessage.toLowerCase();
+    const detection = BroadcastEngine.detectMode({
+      message: commanderMessage,
+      isScheduled: false,
+      isKpiAlert: false
+    });
+
+    const sessionId = `legacy-decide-${Date.now()}`;
     
-    // 担当者の振り分けロジック
-    let assignedRole: AgentRole = 'ceo';
+    const result = await BroadcastEngine.broadcast({
+      mode: detection.mode,
+      message: commanderMessage,
+      agentId: detection.agentId,
+      sessionId
+    });
 
-    if (msg.includes('収支') || msg.includes('利益') || msg.includes('円') || msg.includes('利回り')) {
-      assignedRole = 'cfo';
-    } else if (msg.includes('技術') || msg.includes('効率') || msg.includes('プログラム') || msg.includes('ハッシュレート')) {
-      assignedRole = 'cto';
-    } else if (msg.includes('進捗') || msg.includes('タスク') || msg.includes('完了')) {
-      assignedRole = 'coo';
-    }
-
-    const profile = this.profiles[assignedRole];
-    
-    // LLM 用のメッセージ構築
-    const messages: ChatMessage[] = [
-      { role: 'system', content: profile.systemPrompt },
-      ...history,
-      { role: 'user', content: commanderMessage }
-    ];
-
-    try {
-      let responseMessage = '';
-
-      if (profile.model === 'openai') {
-        responseMessage = await LLMClient.chatOpenAI(messages);
-      } else {
-        responseMessage = await LLMClient.chatAnthropic(messages);
-      }
-
+    if (result.responses && result.responses.length > 0) {
+      const mainResp = result.responses[0];
       return {
-        agentId: assignedRole,
-        agentName: profile.name,
-        message: responseMessage
-      };
-
-    } catch (err) {
-      console.error(`❌ LLM Call Failed for ${assignedRole}:`, err);
-      // Fallback to Skeleton Mode
-      return {
-        agentId: assignedRole,
-        agentName: profile.name,
-        message: `[Fallback Mode] 指令「${commanderMessage}」を受信。現在、私の思考エンジンが技術的な調整中ですが、任務は継続中です。`
+        agentId: mainResp.agentId as AgentRole,
+        agentName: mainResp.agentName,
+        message: mainResp.message
       };
     }
+
+    return {
+      agentId: (detection.agentId as AgentRole) || 'ceo',
+      agentName: 'System',
+      message: '[分析保留] エージェントが沈黙を選択しました。'
+    };
   }
 
   /**
-   * エージェント間議論（会議形式）での発言を生成する
+   * エージェント間議論（ブロードキャスト会議）のトリガー
+   * (互換性維持：旧 Orchestrator からの呼び出しに対応)
    */
   static async debate(role: AgentRole, thread: ChatMessage[]): Promise<AgentResponse> {
-    const profile = this.profiles[role];
+    // 役職を指定した議論も、V2ではブロードキャスト会議の一部として扱う
+    const lastMsg = thread[thread.length - 1]?.content || '議題の再確認';
+    const sessionId = `legacy-debate-${Date.now()}`;
     
-    // 会議用のシステムプロンプトに動的な指示を追加
-    const meetingPrompt = `${profile.systemPrompt}\n現在は「Engawa Cycle戦略会議」に参加中です。他のエージェントの発言を踏まえ、自身の専門領域から意見を述べてください。結論だけでなく、なぜそう考えるかの理由も添えてください。`;
+    const result = await BroadcastEngine.broadcast({
+      mode: 'bid',
+      message: lastMsg,
+      agentId: role,
+      sessionId
+    });
 
-    const messages: ChatMessage[] = [
-      { role: 'system', content: meetingPrompt },
-      ...thread
-    ];
-
-    try {
-      let responseMessage = '';
-      if (profile.model === 'openai') {
-        responseMessage = await LLMClient.chatOpenAI(messages);
-      } else {
-        responseMessage = await LLMClient.chatAnthropic(messages);
-      }
-
+    if (result.responses && result.responses.length > 0) {
+      const mainResp = result.responses[0];
       return {
-        agentId: role,
-        agentName: profile.name,
-        message: responseMessage
-      };
-
-    } catch (err) {
-      console.error(`❌ Debate execution failed for ${role}:`, err);
-      return {
-        agentId: role,
-        agentName: profile.name,
-        message: `[分析保留] 指標を再スキャン中ですが、基本的な${profile.expertise[0]}方針に変化はありません。議論を継続してください。`
+        agentId: mainResp.agentId as AgentRole,
+        agentName: mainResp.agentName,
+        message: mainResp.message
       };
     }
+
+    return {
+      agentId: role,
+      agentName: 'System',
+      message: '[議論継続] 思考エンジンが最適解を分析中です。'
+    };
+  }
+
+  /**
+   * 新しい会議の開始
+   */
+  static async startMeeting(agenda: string, mode: BroadcastMode = 'bid') {
+    const sessionId = `meeting-${Date.now()}`;
+    return await BroadcastEngine.broadcast({
+      mode,
+      message: agenda,
+      sessionId
+    });
   }
 }

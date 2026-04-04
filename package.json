@@ -8,9 +8,12 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npx @cloudflare/next-on-pages",
+    "build:next": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pages:dev": "npx @cloudflare/next-on-pages@latest --watch",
+    "pages:build": "npx @cloudflare/next-on-pages@latest"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -30,6 +33,7 @@
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^3"
+    "wrangler": "^3",
+    "@cloudflare/next-on-pages": "^1"
   }
 }
