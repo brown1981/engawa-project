@@ -29,6 +29,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
+          npm run build:cf
+          
           # 🔍 DIAGNOSTIC: Exhaustive fact-finding mission
           echo "==== FACT FINDING: FOLDER STRUCTURE (root) ===="
           ls -F
