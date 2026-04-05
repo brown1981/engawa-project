@@ -1,0 +1,38 @@
+{
+  "name": "app",
+  "version": "0.1.1",
+  "build_tag": "202604031707",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:cf": "npm run build && npx @opennextjs/cloudflare build",
+    "start": "next start",
+    "lint": "next lint",
+    "pages:dev": "npx @opennextjs/cloudflare dev"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^16.4.5",
+    "lucide-react": "^0.363.0",
+    "next": "^15.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^15.0.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wrangler": "^4",
+    "@opennextjs/cloudflare": "latest"
+  }
+}

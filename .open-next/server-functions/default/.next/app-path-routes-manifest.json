@@ -1,0 +1,10 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/ai-test/route": "/api/ai-test",
+  "/api/chat/route": "/api/chat",
+  "/api/inbound/route": "/api/inbound",
+  "/favicon.ico/route": "/favicon.ico",
+  "/api/emails/send/route": "/api/emails/send",
+  "/api/settings/secure-config/route": "/api/settings/secure-config",
+  "/page": "/"
+}

@@ -1,5 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
+import * as crypto from 'node:crypto';
 import { AgentBrain } from '../src/services/agent_brain';
+
+// --- 🛡 Self-contained Decryption Logic (Matching diagnose script) ---
+function decryptSync(encryptedText: string, masterKey: string) {
+  if (!encryptedText || !masterKey) return null;
+  try {
+    const [ivHex, authTagHex, contentHex] = encryptedText.split(':');
+    if (!ivHex || !authTagHex || !contentHex) return null;
+
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const key = crypto.scryptSync(masterKey, 'salt', 32);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    
+    let decrypted = decipher.update(contentHex, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (e) {
+    return null;
+  }
+}
 import { ChatMessage } from '../src/services/llm_client';
 import { NotaryService } from '../src/services/notary';
 import { F2PoolBridge } from '../src/services/f2pool_bridge';
@@ -90,14 +112,44 @@ supabase.channel('autonomous-operations')
 const ANALYSIS_INTERVAL = 60 * 1000; // 1分間隔
 
 async function runAnalysisLoop() {
-  console.log('📈 Running F2Pool Analysis Loop...');
+  console.log('📈 Running F2Pool Analysis Loop (Database-Driven)...');
   try {
-    const stats = await F2PoolBridge.fetchStats('bitcoin', 'engawa_miner').catch(() => ({
-      hashrate: 152.4,
-      value_24h: 12.5,
-      total_paid: 840.2,
-      status: 'active'
-    }));
+    // 1. 最新の設定をDBから取得
+    const { data: configData, error: configError } = await supabase
+      .from('system_config')
+      .select('config_data')
+      .limit(1)
+      .maybeSingle();
+
+    if (configError || !configData?.config_data?.miningPool) {
+      console.warn('⚠️ Orchestrator: Failed to fetch miningPool config from DB. Falling back.');
+    }
+
+    const { miningPool } = configData?.config_data || {};
+    const currency = miningPool?.currency || 'bitcoin';
+    const accountName = miningPool?.accountName || 'privatebrown';
+    let apiKey = miningPool?.apiKey || '';
+
+    // 2. APIキーが暗号化されている場合は復号
+    if (apiKey.startsWith('ENC:')) {
+      const masterKey = process.env.ENCRYPTION_MASTER_KEY;
+      if (!masterKey) {
+        console.error('❌ Orchestrator: ENCRYPTION_MASTER_KEY is missing from environment.');
+      } else {
+        apiKey = decryptSync(apiKey.slice(4), masterKey) || '';
+      }
+    }
+
+    // 3. F2Poolから統計情報を取得
+    const stats = await F2PoolBridge.fetchStats(currency, accountName, apiKey).catch((err) => {
+      console.warn(`⚠️ Orchestrator: Fetch failed for ${accountName} (${currency}):`, err.message);
+      return {
+        hashrate: 0,
+        value_24h: 0,
+        total_paid: 0,
+        status: 'error'
+      };
+    });
 
     const analysis = await CFOLogic.analyzeProfitability(stats);
 

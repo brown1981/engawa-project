@@ -127,8 +127,27 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const aiKeys = configData?.config_data?.aiKeys || {};
-    const openaiKey: string = aiKeys.openai || '';
-    const anthropicKey: string = aiKeys.anthropic || '';
+    const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
+    
+    if (!masterKey) console.warn('⚠️ [Diagnostics/Chat] ENCRYPTION_MASTER_KEY is NOT set!');
+
+    const { decrypt } = await import('../../../lib/security/encryption');
+
+    const getSecureKey = async (raw: string | undefined): Promise<string> => {
+      if (!raw) return '';
+      if (raw.startsWith('ENC:')) {
+        try {
+          return await decrypt(raw.slice(4), masterKey);
+        } catch (e: any) {
+          console.error('❌ [Diagnostics/Chat] Decryption failed:', e.message);
+          return '';
+        }
+      }
+      return raw;
+    };
+
+    const openaiKey = await getSecureKey(aiKeys.openai);
+    const anthropicKey = await getSecureKey(aiKeys.anthropic);
 
     // 対象エージェントを決定（指名あり→1人、指名なし→全員）
     const targetAgents: AgentId[] = agentId

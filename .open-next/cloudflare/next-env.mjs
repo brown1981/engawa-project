@@ -1,0 +1,3 @@
+export const production = {"NEXT_PUBLIC_SUPABASE_URL":"https://gevkjdvyprfmodayszqd.supabase.co","NEXT_PUBLIC_SUPABASE_ANON_KEY":"sb_publishable_4k2IV98--DO-MjEKS9v0uQ_kWRnHOoz","OPENAI_API_KEY":"sk-xxxx-replace-me","ANTHROPIC_API_KEY":"sk-ant-xxxx-replace-me","ENCRYPTION_MASTER_KEY":"L21Axgec1oTWz0/B77cIh+weOfSERN75xUK6SLCLYV4="};
+export const development = {"NEXT_PUBLIC_SUPABASE_URL":"https://gevkjdvyprfmodayszqd.supabase.co","NEXT_PUBLIC_SUPABASE_ANON_KEY":"sb_publishable_4k2IV98--DO-MjEKS9v0uQ_kWRnHOoz","OPENAI_API_KEY":"sk-xxxx-replace-me","ANTHROPIC_API_KEY":"sk-ant-xxxx-replace-me","ENCRYPTION_MASTER_KEY":"L21Axgec1oTWz0/B77cIh+weOfSERN75xUK6SLCLYV4="};
+export const test = {};

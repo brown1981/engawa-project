@@ -24,9 +24,34 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const aiKeys = configData?.config_data?.aiKeys || {};
+    const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
+    
+    if (!masterKey) console.warn('⚠️ [Diagnostics/Chat] ENCRYPTION_MASTER_KEY is NOT set!');
+
+    const { decrypt } = await import('../../../lib/security/encryption');
+
+    const getSecureKey = async (raw: string | undefined): Promise<string> => {
+      if (!raw) {
+        console.warn('⚠️ [Diagnostics] Raw key from DB is empty.');
+        return '';
+      }
+      if (raw.startsWith('ENC:')) {
+        try {
+          console.log('[Diagnostics] Attempting to decrypt ENC key...');
+          const decrypted = await decrypt(raw.slice(4), masterKey);
+          console.log('[Diagnostics] Decryption successful.');
+          return decrypted;
+        } catch (e: any) {
+          console.error('❌ [Diagnostics/Chat] Decryption failed:', e.message);
+          return '';
+        }
+      }
+      console.log('[Diagnostics] Using legacy plain-text key.');
+      return raw;
+    };
 
     if (provider === 'openai') {
-      const apiKey: string = aiKeys.openai || '';
+      const apiKey = await getSecureKey(aiKeys.openai);
       if (!apiKey || apiKey.length < 20) {
         return NextResponse.json({ success: false, error: 'OpenAI APIキーが設定されていません' });
       }
@@ -46,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'OpenAI接続確認済み ✅' });
 
     } else if (provider === 'anthropic') {
-      const apiKey: string = aiKeys.anthropic || '';
+      const apiKey = await getSecureKey(aiKeys.anthropic);
       if (!apiKey || apiKey.length < 20) {
         return NextResponse.json({ success: false, error: 'Anthropic APIキーが設定されていません' });
       }

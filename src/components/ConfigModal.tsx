@@ -26,10 +26,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
 
   useEffect(() => {
     if (isOpen) {
-      // Load current config from Supabase directly
-      import('../lib/supabase').then(async ({ supabase }) => {
-        try {
-          const { data, error } = await supabase.from('system_config').select('*').limit(1).maybeSingle();
+      // Load current config from Secure Settings API
+      setLoading(true);
+      fetch('/api/settings/secure-config')
+        .then(res => res.json())
+        .then(data => {
           if (data && data.config_data) {
             setConfig(prev => ({
               ...prev,
@@ -40,10 +41,9 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
               agentAssignments: { ...prev.agentAssignments, ...(data.config_data.agentAssignments || {}) }
             }));
           }
-        } catch (err) {
-          console.error('Failed to load config:', err);
-        }
-      });
+        })
+        .catch(err => console.error('Failed to load config:', err))
+        .finally(() => setLoading(false));
     }
   }, [isOpen]);
 
@@ -71,12 +71,14 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
     setSuccess(false);
 
     try {
-      const { supabase } = await import('../lib/supabase');
-      const { error } = await supabase
-        .from('system_config')
-        .upsert({ id: 1, config_data: config });
+      const res = await fetch('/api/settings/secure-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config }),
+      });
 
-      if (!error) {
+      const data = await res.json();
+      if (data.success) {
         setSuccess(true);
         onSave();
         setTimeout(() => {
@@ -84,11 +86,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose, onSave }) =>
             onClose();
         }, 1500);
       } else {
-        throw new Error('Failed to save configuration');
+        throw new Error(data.error || 'Failed to save configuration');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Error saving configuration.');
+      alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
