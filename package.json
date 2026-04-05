@@ -1,7 +1,7 @@
 {
   "name": "app",
   "version": "0.1.1",
-  "build_tag": "202604031707",
+  "build_tag": "2026-04-05-v1",
   "private": true,
   "engines": {
     "node": ">=20"

@@ -99,6 +99,9 @@ export default function Dashboard() {
           <p className="text-zinc-500 text-[10px] mt-1 font-bold uppercase tracking-[0.3em] opacity-60">
              Mission Control // Autonomous Intelligence Hub
           </p>
+          <div className="text-[8px] text-zinc-600 font-mono mt-1 uppercase tracking-widest">
+            Build: 2026-04-05-v1
+          </div>
         </div>
         <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-2xl border border-zinc-800 backdrop-blur-xl">
           <select 
