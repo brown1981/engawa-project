@@ -20,19 +20,19 @@ export default {
 
   // 2. Cloudflare から直接送られてくるメールを処理
   async email(message: any, env: any, ctx: any) {
-    const from = message.from || "unknown-sender";
-    const subject = message.headers?.get('subject') || '(No Subject)';
-    console.log(`📨 Inbound Email: ${from} | Subject: ${subject}`);
+    const from = message.from || "送信元不明";
+    const subject = message.headers?.get('subject') || '(件名なし)';
+    console.log(`📨 メール受信: ${from} | 件名: ${subject}`);
     
     try {
       // (1) 指定されたアドレスへ自動転送
       if (env.FORWARD_TO_EMAIL) {
         try {
           await message.forward(env.FORWARD_TO_EMAIL);
-          console.log(`✅ Forwarded to: ${env.FORWARD_TO_EMAIL}`);
+          console.log(`✅ 転送完了: ${env.FORWARD_TO_EMAIL}`);
         } catch (fwdErr: any) {
-          console.error(`⚠️ Forwarding failed (Make sure the destination is verified): ${fwdErr.message}`);
-          // 転送失敗しても DB 保存は続行
+          console.error(`⚠️ 転送失敗 (転送先アドレスが正しく登録されているか確認ください): ${fwdErr.message}`);
+          // 転送に失敗してもデータベースへの保存は続行します
         }
       }
 
@@ -41,15 +41,15 @@ export default {
       const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
       if (!supabaseUrl || !supabaseServiceKey) {
-        console.error("❌ DB Insert Aborted: Missing Supabase Credentials in Env Vars.");
+        console.error("❌ 保存中止: Supabase の接続情報が環境変数に見つかりません。");
         return;
       }
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      let bodyText = "[Body extraction failed]";
+      let bodyText = "[本文の抽出に失敗しました]";
       try {
-        bodyText = (await new Response(message.raw).text()) || "[Empty Body]";
+        bodyText = (await new Response(message.raw).text()) || "[本文なし]";
       } catch (readErr) {}
 
       const { data, error } = await supabase
@@ -57,7 +57,7 @@ export default {
         .insert([
           {
             from_address: from,
-            to_address: message.to || "unknown-recipient",
+            to_address: message.to || "宛先不明",
             subject: subject,
             body_text: bodyText,
             metadata: {
@@ -70,13 +70,13 @@ export default {
         .select();
 
       if (error) {
-        console.error("❌ DB Insert Failed:", JSON.stringify(error));
+        console.error("❌ DB保存失敗:", JSON.stringify(error));
       } else {
-        console.log(`✨ DB Saved: Record ID ${data?.[0]?.id || 'unknown'}`);
+        console.log(`✨ DB保存成功: ID ${data?.[0]?.id || 'unknown'}`);
       }
 
     } catch (globalErr: any) {
-      console.error("❌ Fatal Error in Email Handler:", globalErr.message || globalErr);
+      console.error("❌ メール処理中に致命的なエラーが発生しました:", globalErr.message || globalErr);
     }
   }
 };
