@@ -126,6 +126,21 @@ export async function POST(request: NextRequest) {
       sessionId: string;
     };
 
+    // 🩺 隠しコマンド診断 (@check)
+    if (message.includes('@check')) {
+      const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
+      const maskedKey = masterKey ? `${masterKey.substring(0, 4)}...${masterKey.substring(masterKey.length - 4)}` : "NOT_SET";
+      return NextResponse.json({ 
+        success: true, 
+        responses: [{ 
+          agentId: 'ceo', 
+          agentName: 'System (Diagnosis)', 
+          avatar: '🛠️', 
+          message: `--- DIAGNOSIS REPORT ---\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nPreview: ${maskedKey}\nLength: ${masterKey.length}\nRuntime: ${typeof crypto === 'undefined' ? "NODE" : "EDGE"}` 
+        }]
+      });
+    }
+
     if (!message || !sessionId) {
       return NextResponse.json({ error: 'message and sessionId are required' }, { status: 400 });
     }
