@@ -4,10 +4,9 @@ import { AgentBrain } from '../src/services/agent_brain';
 
 // --- 🛡 Worker-Compatible Decryption Logic ---
 function getCryptoKey(masterKeyStr: string) {
-  const keyData = Buffer.alloc(32, 0);
-  const buf = Buffer.from(masterKeyStr, 'utf8');
-  buf.copy(keyData, 0, 0, Math.min(buf.length, 32));
-  return keyData;
+  // Web Crypto の実装 masterKeyStr.padEnd(32, '0').slice(0, 32) に厳密に合わせる
+  const padded = masterKeyStr.padEnd(32, '0').slice(0, 32);
+  return Buffer.from(padded, 'utf8');
 }
 
 function decryptSync(encryptedText: string, masterKeyStr: string) {
