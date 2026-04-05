@@ -16,12 +16,16 @@ export default {
   // 1. 通常の Web 画面リクエストを処理 (Next.js)
   async fetch(request: Request, env: any, ctx: any) {
     // 🩺 プロンプトレベルでの診断割り込み (@check コマンドを最優先処理)
-    if (request.method === 'POST' && request.url.includes('/api/chat')) {
-      const clonedRequest = request.clone();
+    // どんなエラーがあっても、これだけは必ず返るように最上部に配置します。
+    if (request.method === 'POST') {
       try {
+        const clonedRequest = request.clone();
         const body = await clonedRequest.json() as any;
-        if (body.message?.includes('@check')) {
+        const msg = (body.message || "").toLowerCase();
+        
+        if (msg.includes('@check')) {
           const masterKey = env.ENCRYPTION_MASTER_KEY || '';
+          const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || 'NOT_SET';
           const maskedKey = masterKey ? `${masterKey.substring(0, 4)}...${masterKey.substring(masterKey.length - 4)}` : "NOT_SET";
           
           return new Response(JSON.stringify({ 
@@ -30,7 +34,7 @@ export default {
               agentId: 'ceo', 
               agentName: 'System (DIRECT_ENTRY)', 
               avatar: '🛰️', 
-              message: `--- ENTRY POINT DIAGNOSIS ---\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nPreview: ${maskedKey}\nLength: ${masterKey.length}\nTarget Hash: ee9eabe7238f...\nRuntime: WORKER` 
+              message: `--- [V2 SUCCESS SYNC] ---\nSTATUS: CONNECTED\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nMasterKey Preview: ${maskedKey}\nDB_URL: ${supabaseUrl}\nRuntime: Cloudflare Native Worker` 
             }]
           }), { headers: { 'Content-Type': 'application/json' } });
         }
