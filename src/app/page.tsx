@@ -100,7 +100,7 @@ export default function Dashboard() {
              Mission Control // Autonomous Intelligence Hub
           </p>
           <div className="text-[8px] text-zinc-600 font-mono mt-1 uppercase tracking-widest">
-            Build: 2026-04-05-v1
+            Build: 2026-04-05-v2-SUCCESS-SYNC
           </div>
           <div className="text-[7px] text-zinc-700 font-mono mt-0.5 uppercase tracking-tighter opacity-50">
             API_BASE: {typeof window !== 'undefined' ? window.location.origin : 'SSR'}
