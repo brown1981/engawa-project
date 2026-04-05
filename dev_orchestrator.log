@@ -22806,8 +22806,80 @@ Mode: Dynamic LLM Contextual Analysis + Notarization
     at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
 🛡️ Notary: Hash generated [bfe702c0...]
 ✅ [GPT-4o (CFO)] Message notarized & stored.
-p [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:101:19)
-🛡️ Notary: Hash generated [136f7bbd...]
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [b261e07e...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [7754ec44...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [f2fe179e...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [edefdb39...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📡 Directive received: "@check"
+🧠 AI is thinking with 10 messages of context...
+🛡️ Notary: Hash generated [9ab705ea...]
+✅ [Sakana AI (CEO)] Message notarized & stored.
+📡 Directive received: "@check"
+🧠 AI is thinking with 10 messages of context...
+🛡️ Notary: Hash generated [e4d9b660...]
+✅ [Sakana AI (CEO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [eb0ff5e0...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:95:19)
+🛡️ Notary: Hash generated [7c9126d1...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+sisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:101:19)
+🛡️ Notary: Hash generated [d8e88147...]
+✅ [GPT-4o (CFO)] Message notarized & stored.
+📡 Directive received: "@check"
+🧠 AI is thinking with 10 messages of context...
+🛡️ Notary: Hash generated [067a08b2...]
+✅ [Sakana AI (CEO)] Message notarized & stored.
+📡 Directive received: "@check"
+🧠 AI is thinking with 10 messages of context...
+🛡️ Notary: Hash generated [bf0c2d5e...]
+✅ [Sakana AI (CEO)] Message notarized & stored.
+📈 Running F2Pool Analysis Loop...
+📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
+❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
+    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:101:19)
+🛡️ Notary: Hash generated [e4d2fcd5...]
 ✅ [GPT-4o (CFO)] Message notarized & stored.
 📈 Running F2Pool Analysis Loop...
 📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
@@ -22815,21 +22887,5 @@ p [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-proje
     at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
     at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:101:19)
-🛡️ Notary: Hash generated [f678c02d...]
-✅ [GPT-4o (CFO)] Message notarized & stored.
-📡 Directive received: "@check"
-🧠 AI is thinking with 10 messages of context...
-🛡️ Notary: Hash generated [0a5376a0...]
-✅ [Sakana AI (CEO)] Message notarized & stored.
-📡 Directive received: "@check"
-🧠 AI is thinking with 10 messages of context...
-🛡️ Notary: Hash generated [1cb676d5...]
-✅ [Sakana AI (CEO)] Message notarized & stored.
-📈 Running F2Pool Analysis Loop...
-📡 Bridge: Fetching from https://api.f2pool.com/bitcoin/engawa_miner...
-❌ Bridge: Fetch failed: Error: F2Pool API Error: 404 Not Found
-    at F2PoolBridge.fetchStats (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/src/services/f2pool_bridge.ts:31:15)
-    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
-    at async Timeout.runAnalysisLoop [as _onTimeout] (/Users/ooshirokazuki/.gemini/antigravity/scratch/engawa-project/app/scripts/ai_orchestrator.ts:101:19)
-🛡️ Notary: Hash generated [cc446014...]
+🛡️ Notary: Hash generated [9e430057...]
 ✅ [GPT-4o (CFO)] Message notarized & stored.
