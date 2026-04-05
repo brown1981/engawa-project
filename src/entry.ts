@@ -20,49 +20,63 @@ export default {
 
   // 2. Cloudflare から直接送られてくるメールを処理
   async email(message: any, env: any, ctx: any) {
+    console.log(`📩 New inbound email received from: ${message.from} to: ${message.to}`);
+    
     const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Supabase configuration missing in env');
+      console.error('❌ CRITICAL: Supabase environment variables are MISSING in Cloudflare Worker settings.');
+      console.log('Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the Worker Variables.');
       return;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     try {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const subject = message.headers.get('subject') || '(No Subject)';
       const from = message.from;
       const to = message.to;
       
-      // メール本文の読み込み (簡易的なテキスト抽出)
-      // より高度なパースが必要な場合は postal-mime などの導入を検討
-      const rawEmail = await new Response(message.raw).text();
+      console.log(`📝 Parsing email headers. Subject: ${subject}`);
+      
+      // メール本文の読み込み
+      let bodyText = "";
+      try {
+        bodyText = await new Response(message.raw).text();
+        console.log(`📄 Raw body extracted (${bodyText.length} bytes)`);
+      } catch (bodyErr) {
+        console.error('⚠️ Failed to extract body text, using headers only.');
+        bodyText = "[Body extraction failed]";
+      }
       
       // Supabase の emails テーブルに保存
-      const { error } = await supabase
+      console.log('💾 Attempting to insert into Supabase...');
+      const { data, error } = await supabase
         .from('emails')
         .insert([
           {
             from_address: from,
             to_address: to,
             subject: subject,
-            body_text: rawEmail, // 生のデータを一旦保存 (後にAIで解析)
+            body_text: bodyText,
             metadata: {
               native_worker: true,
-              received_at: new Date().toISOString()
+              received_at: new Date().toISOString(),
+              raw_headers: Object.fromEntries(message.headers.entries())
             }
           }
         ]);
 
       if (error) {
-        console.error('❌ Failed to store email in Supabase:', error);
+        console.error('❌ Supabase Insertion Error:', JSON.stringify(error));
+        // ここでエラーを投げると Cloudflare 側で "Dropped" になる可能性があるため、
+        // ログを残して静かに終了するか、必要に応じてリトライを検討
       } else {
-        console.log(`✅ Email from ${from} stored successfully via native handler.`);
+        console.log(`✅ SUCCESS: Email stored in record ID: ${data?.[0]?.id || 'unknown'}`);
       }
 
-    } catch (err) {
-      console.error('❌ Error in email handler:', err);
+    } catch (err: any) {
+      console.error('❌ UNHANDLED EXCEPTION in email handler:', err?.message || err);
     }
   }
 };
