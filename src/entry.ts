@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // OpenNext が生成するメインの Next.js アプリをインポート
 // 注: ビルド時には .open-next/worker.js が存在することを前提とします
+// @ts-ignore - ビルド後に生成されるファイルを読み込むため、型チェックをスキップします
 import worker from '../.open-next/worker.js';
 
 /**
