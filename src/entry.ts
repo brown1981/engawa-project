@@ -15,6 +15,28 @@ import worker from '../.open-next/worker.js';
 export default {
   // 1. 通常の Web 画面リクエストを処理 (Next.js)
   async fetch(request: Request, env: any, ctx: any) {
+    // 🩺 プロンプトレベルでの診断割り込み (@check コマンドを最優先処理)
+    if (request.method === 'POST' && request.url.includes('/api/chat')) {
+      const clonedRequest = request.clone();
+      try {
+        const body = await clonedRequest.json() as any;
+        if (body.message?.includes('@check')) {
+          const masterKey = env.ENCRYPTION_MASTER_KEY || '';
+          const maskedKey = masterKey ? `${masterKey.substring(0, 4)}...${masterKey.substring(masterKey.length - 4)}` : "NOT_SET";
+          
+          return new Response(JSON.stringify({ 
+            success: true, 
+            responses: [{ 
+              agentId: 'ceo', 
+              agentName: 'System (DIRECT_ENTRY)', 
+              avatar: '🛰️', 
+              message: `--- ENTRY POINT DIAGNOSIS ---\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nPreview: ${maskedKey}\nLength: ${masterKey.length}\nTarget Hash: ee9eabe7238f...\nRuntime: WORKER` 
+            }]
+          }), { headers: { 'Content-Type': 'application/json' } });
+        }
+      } catch (e) {}
+    }
+
     return worker.fetch(request, env, ctx);
   },
 
