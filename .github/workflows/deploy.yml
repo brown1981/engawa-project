@@ -31,9 +31,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          # 1. Build for Cloudflare
+          # 1. Next.js のビルドと OpenNext のビルド
           npm run build:cf
           
-          # 2. Deploy using the unified command (standard OpenNext / Cloudflare way)
-          # This command handles assets, routing, and workers automatically.
-          npx @opennextjs/cloudflare deploy --name engawa-project
+          # 2. Wrangler を使って直接 Worker をデプロイ（本番環境を強制更新）
+          # --name engawa-project で確実に同じプロジェクトを狙い撃ちします
+          npx wrangler deploy --name engawa-project --minify
