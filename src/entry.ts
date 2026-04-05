@@ -20,61 +20,49 @@ export default {
 
   // 2. Cloudflare から直接送られてくるメールを処理
   async email(message: any, env: any, ctx: any) {
-    console.log("--- 📨 Native Email Handler Started ---");
+    const from = message.from || "unknown-sender";
+    const subject = message.headers?.get('subject') || '(No Subject)';
+    console.log(`📨 Inbound Email: ${from} | Subject: ${subject}`);
     
     try {
-      const from = message.from || "unknown-sender";
-      const to = message.to || "unknown-recipient";
-      const subject = message.headers?.get('subject') || '(No Subject)';
-      
-      console.log(`[Step 1] Basic Info: From=${from}, Subject=${subject}`);
+      // (1) 指定されたアドレスへ自動転送
+      if (env.FORWARD_TO_EMAIL) {
+        try {
+          await message.forward(env.FORWARD_TO_EMAIL);
+          console.log(`✅ Forwarded to: ${env.FORWARD_TO_EMAIL}`);
+        } catch (fwdErr: any) {
+          console.error(`⚠️ Forwarding failed (Make sure the destination is verified): ${fwdErr.message}`);
+          // 転送失敗しても DB 保存は続行
+        }
+      }
 
-      // 診断用：現在 Worker が認識している「カギの名前」をすべてリストアップ
-      const availableKeys = Object.keys(env || {});
-      console.log(`[Diagnostic] Available Env Keys: ${availableKeys.join(", ") || "(None)"}`);
-
-      // URL と Key を柔軟に取得 (名前のゆらぎに対応)
+      // (2) Supabase への保存
       const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
       if (!supabaseUrl || !supabaseServiceKey) {
-        console.error(`[Error] Missing Env Vars. URL=${!!supabaseUrl}, Key=${!!supabaseServiceKey}`);
-        return; // 静かに終了して Dropped を回避
-      }
-
-      // Supabase クライアントの初期化を慎重に行う
-      let supabase: any;
-      try {
-        supabase = createClient(supabaseUrl, supabaseServiceKey);
-        console.log("[Step 2] Supabase Client Initialized");
-      } catch (clientErr: any) {
-        console.error("[Error] Supabase client init failed:", clientErr.message);
+        console.error("❌ DB Insert Aborted: Missing Supabase Credentials in Env Vars.");
         return;
       }
 
-      // メール本文の読み込み (ここがエラーの原因になりやすいため、徹底的にガード)
-      let bodyText = "Extracting body...";
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      let bodyText = "[Body extraction failed]";
       try {
-        const rawContent = await new Response(message.raw).text();
-        bodyText = rawContent || "[Empty Body]";
-        console.log(`[Step 3] Body Extracted: ${bodyText.length} bytes`);
-      } catch (readErr: any) {
-        console.error("[Error] Body read failed:", readErr.message);
-        bodyText = "[Failed to read email body content]";
-      }
+        bodyText = (await new Response(message.raw).text()) || "[Empty Body]";
+      } catch (readErr) {}
 
-      // Supabase への書き込み
-      console.log("[Step 4] Attempting Database Insert...");
       const { data, error } = await supabase
         .from('emails')
         .insert([
           {
             from_address: from,
-            to_address: to,
+            to_address: message.to || "unknown-recipient",
             subject: subject,
             body_text: bodyText,
             metadata: {
-              native_worker_v2: true,
+              source: "cloudflare-native-worker",
+              forwarded: !!env.FORWARD_TO_EMAIL,
               timestamp: new Date().toISOString()
             }
           }
@@ -82,15 +70,13 @@ export default {
         .select();
 
       if (error) {
-        console.error("[Error] DB Insert Failed:", JSON.stringify(error));
+        console.error("❌ DB Insert Failed:", JSON.stringify(error));
       } else {
-        console.log(`[Step 5] SUCCESS! New record ID: ${data?.[0]?.id || 'unknown'}`);
+        console.log(`✨ DB Saved: Record ID ${data?.[0]?.id || 'unknown'}`);
       }
 
     } catch (globalErr: any) {
-      console.error("❌ FATAL CRASH in email handler:", globalErr.message || globalErr);
+      console.error("❌ Fatal Error in Email Handler:", globalErr.message || globalErr);
     }
-    
-    console.log("--- 📨 Native Email Handler Finished ---");
   }
 };
