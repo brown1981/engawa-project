@@ -20,37 +20,46 @@ export default {
 
   // 2. Cloudflare から直接送られてくるメールを処理
   async email(message: any, env: any, ctx: any) {
-    console.log(`📩 New inbound email received from: ${message.from} to: ${message.to}`);
+    console.log("--- 📨 Native Email Handler Started ---");
     
-    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ CRITICAL: Supabase environment variables are MISSING in Cloudflare Worker settings.');
-      console.log('Please add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the Worker Variables.');
-      return;
-    }
-
     try {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      const subject = message.headers.get('subject') || '(No Subject)';
-      const from = message.from;
-      const to = message.to;
+      const from = message.from || "unknown-sender";
+      const to = message.to || "unknown-recipient";
+      const subject = message.headers?.get('subject') || '(No Subject)';
       
-      console.log(`📝 Parsing email headers. Subject: ${subject}`);
-      
-      // メール本文の読み込み
-      let bodyText = "";
-      try {
-        bodyText = await new Response(message.raw).text();
-        console.log(`📄 Raw body extracted (${bodyText.length} bytes)`);
-      } catch (bodyErr) {
-        console.error('⚠️ Failed to extract body text, using headers only.');
-        bodyText = "[Body extraction failed]";
+      console.log(`[Step 1] Basic Info: From=${from}, Subject=${subject}`);
+
+      const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error("[Error] Missing Env Vars. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+        return; // 静かに終了して Dropped を回避
       }
-      
-      // Supabase の emails テーブルに保存
-      console.log('💾 Attempting to insert into Supabase...');
+
+      // Supabase クライアントの初期化を慎重に行う
+      let supabase: any;
+      try {
+        supabase = createClient(supabaseUrl, supabaseServiceKey);
+        console.log("[Step 2] Supabase Client Initialized");
+      } catch (clientErr: any) {
+        console.error("[Error] Supabase client init failed:", clientErr.message);
+        return;
+      }
+
+      // メール本文の読み込み (ここがエラーの原因になりやすいため、徹底的にガード)
+      let bodyText = "Extracting body...";
+      try {
+        const rawContent = await new Response(message.raw).text();
+        bodyText = rawContent || "[Empty Body]";
+        console.log(`[Step 3] Body Extracted: ${bodyText.length} bytes`);
+      } catch (readErr: any) {
+        console.error("[Error] Body read failed:", readErr.message);
+        bodyText = "[Failed to read email body content]";
+      }
+
+      // Supabase への書き込み
+      console.log("[Step 4] Attempting Database Insert...");
       const { data, error } = await supabase
         .from('emails')
         .insert([
@@ -60,24 +69,23 @@ export default {
             subject: subject,
             body_text: bodyText,
             metadata: {
-              native_worker: true,
-              received_at: new Date().toISOString(),
-              raw_headers: Object.fromEntries(message.headers.entries())
+              native_worker_v2: true,
+              timestamp: new Date().toISOString()
             }
           }
-        ]);
+        ])
+        .select();
 
       if (error) {
-        console.error('❌ Supabase Insertion Error:', JSON.stringify(error));
-        // ここでエラーを投げると Cloudflare 側で "Dropped" になる可能性があるため、
+        console.error("[Error] DB Insert Failed:", JSON.stringify(error));
       } else {
-        // 型エラーを回避するため、安全にログを出力します
-        const recordId = (data as any)?.[0]?.id || 'unknown';
-        console.log(`✅ SUCCESS: Email stored in record ID: ${recordId}`);
+        console.log(`[Step 5] SUCCESS! New record ID: ${data?.[0]?.id || 'unknown'}`);
       }
 
-    } catch (err: any) {
-      console.error('❌ UNHANDLED EXCEPTION in email handler:', err?.message || err);
+    } catch (globalErr: any) {
+      console.error("❌ FATAL CRASH in email handler:", globalErr.message || globalErr);
     }
+    
+    console.log("--- 📨 Native Email Handler Finished ---");
   }
 };
