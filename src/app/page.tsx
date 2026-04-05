@@ -18,6 +18,7 @@ import { MessageSquare, Mail, Plus } from 'lucide-react';
 // ------------------------------------------------------------------
 // 🚀 生産検証（Production Hardening）版 Dashboard V2 (Integrated Comm)
 // ------------------------------------------------------------------
+export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
   const [session, setSession] = useState<any>(null);
