@@ -90,15 +90,40 @@ async function callAnthropic(apiKey: string, systemPrompt: string, userMessage: 
   return data.content?.[0]?.text || '[エラー：Anthropic からの返答が空です]';
 }
 
-// コスト計算（概算：USD→JPY, GPT-4o料金基準）
+// 概算コスト計算
 function estimateCostJpy(tokensIn: number, tokensOut: number, model: string): number {
   const USD_TO_JPY = 150;
   if (model === 'openai') {
     return ((tokensIn * 0.0025 + tokensOut * 0.01) / 1000) * USD_TO_JPY;
   } else {
-    // Claude 3.5 Sonnet
     return ((tokensIn * 0.003 + tokensOut * 0.015) / 1000) * USD_TO_JPY;
   }
+}
+
+/**
+ * 🩺 診断用 GET ハンドラ (本番環境の状況を確認)
+ */
+export async function GET() {
+  const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
+  let hash = "NOT_SET";
+  if (masterKey) {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(masterKey);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      hash = Array.from(new Uint8Array(hashBuffer)).map(x => x.toString(16).padStart(2, '0')).join('');
+    } catch (e: any) {
+      hash = `HASH_ERROR: ${e.message}`;
+    }
+  }
+
+  return NextResponse.json({
+    diagnostics: "ACTIVE_IN_CHAT_ROUTE",
+    masterKeyStatus: masterKey ? "FOUND" : "NOT_FOUND",
+    masterKeyHash: hash,
+    nodeVersion: process.version,
+    note: "Target Hash: ee9eabe7238f911b8ea24abe37a51edf29993ffdf1cc2c3805684eff756aa5a8"
+  });
 }
 
 export async function POST(request: NextRequest) {
