@@ -127,8 +127,9 @@ export async function POST(request: NextRequest) {
     };
 
     // 🩺 隠しコマンド診断 (@check)
-    if (message.includes('@check')) {
-      const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
+    if (message.toLowerCase().includes('@check')) {
+      const edgeEnv = (process.env as any).ENCRYPTION_MASTER_KEY || (request as any).env?.ENCRYPTION_MASTER_KEY || '';
+      const masterKey = edgeEnv || process.env.ENCRYPTION_MASTER_KEY || '';
       const maskedKey = masterKey ? `${masterKey.substring(0, 4)}...${masterKey.substring(masterKey.length - 4)}` : "NOT_SET";
       return NextResponse.json({ 
         success: true, 
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
           agentId: 'ceo', 
           agentName: 'System (Diagnosis)', 
           avatar: '🛠️', 
-          message: `--- DIAGNOSIS REPORT ---\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nPreview: ${maskedKey}\nLength: ${masterKey.length}\nRuntime: ${typeof crypto === 'undefined' ? "NODE" : "EDGE"}` 
+          message: `--- API ROUTE DIAGNOSIS ---\nMasterKey: ${masterKey ? "FOUND" : "MISSING"}\nPreview: ${maskedKey}\nRuntime: ${typeof crypto === 'undefined' ? "NODE" : "EDGE"}\nEnv Source: ${edgeEnv ? "DIRECT_PROCESS_ENV" : "FALLBACK"}` 
         }]
       });
     }

@@ -106,7 +106,7 @@ export default function Dashboard() {
             API_BASE: {typeof window !== 'undefined' ? window.location.origin : 'SSR'}
           </div>
           <div className="text-[7px] text-zinc-800 font-bold font-mono mt-1 uppercase">
-            ENV_CHECK: {process.env.ENCRYPTION_MASTER_KEY ? "MASTER_KEY_FOUND_IN_UI" : "MASTER_KEY_MISSING_IN_UI"}
+            ENV_CHECK: {(globalThis as any).ENCRYPTION_MASTER_KEY || (process.env as any).ENCRYPTION_MASTER_KEY ? "MASTER_KEY_FOUND_IN_UI" : "MASTER_KEY_MISSING_IN_UI"}
           </div>
         </div>
         <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-2xl border border-zinc-800 backdrop-blur-xl">
