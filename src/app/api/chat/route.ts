@@ -101,29 +101,20 @@ function estimateCostJpy(tokensIn: number, tokensOut: number, model: string): nu
 }
 
 /**
- * 🩺 診断用 GET ハンドラ (本番環境の状況を確認)
+ * 🩺 診断用 GET ハンドラ (最安全版)
  */
 export async function GET() {
   const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
-  let hash = "NOT_SET";
-  if (masterKey) {
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(masterKey);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      hash = Array.from(new Uint8Array(hashBuffer)).map(x => x.toString(16).padStart(2, '0')).join('');
-    } catch (e: any) {
-      hash = `HASH_ERROR: ${e.message}`;
-    }
-  }
+  const maskedKey = masterKey ? `${masterKey.substring(0, 4)}...${masterKey.substring(masterKey.length - 4)}` : "NOT_SET";
 
-  return NextResponse.json({
-    diagnostics: "ACTIVE_IN_CHAT_ROUTE",
-    masterKeyStatus: masterKey ? "FOUND" : "NOT_FOUND",
-    masterKeyHash: hash,
-    nodeVersion: process.version,
-    note: "Target Hash: ee9eabe7238f911b8ea24abe37a51edf29993ffdf1cc2c3805684eff756aa5a8"
-  });
+  return new Response(`
+    --- ENGAWA DIAGNOSTICS ---
+    Status: ACTIVE
+    MasterKey: ${masterKey ? "FOUND" : "MISSING"}
+    Preview: ${maskedKey}
+    Length: ${masterKey.length}
+    Runtime: ${typeof crypto === 'undefined' ? "NODE (No Global Crypto)" : "EDGE/WEB (Subtle Available)"}
+  `, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
 
 export async function POST(request: NextRequest) {
