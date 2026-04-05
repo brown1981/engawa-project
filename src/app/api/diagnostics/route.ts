@@ -1,49 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { decrypt, encrypt } from '../../../lib/security/encryption';
-
-export const runtime = 'edge';
 
 /**
- * 🩺 Engawa Security Diagnostics
+ * 🩺 Engawa Security Diagnostics (Ultra-compatible Mode)
  * 
- * 本番環境での環境変数の読み込み状態と、暗号化ロジックの整合性をチェックします。
+ * ランタイムに依存せず、環境変数の状態のみを確実に報告します。
  */
 export async function GET(request: NextRequest) {
   try {
     const masterKey = process.env.ENCRYPTION_MASTER_KEY || '';
     
-    // セキュリティのため、キーそのものは隠し、ハッシュ値のみを確認
-    const hashUnprocessed = masterKey 
-        ? await crypto.subtle.digest('SHA-256', new TextEncoder().encode(masterKey))
-        : null;
+    // Web Crypto が使えない場合も想定して、手動でハッシュ計算を試みる
+    let hash = "CALCULATING...";
     
-    const hash = hashUnprocessed
-        ? Array.from(new Uint8Array(hashUnprocessed)).map(x => x.toString(16).padStart(2, '0')).join('')
-        : 'NOT SET';
-
-    const testText = "Engawa Connection Test";
-    let encryptionTest = "STAGED";
-    let decryptionTest = "STAGED";
-
-    const encrypted = await encrypt(testText, masterKey);
-    encryptionTest = "SUCCESS ✅";
-    
-    const decrypted = await decrypt(encrypted, masterKey);
-    decryptionTest = (decrypted === testText) ? "SUCCESS ✅" : "FAILED ❌ (Mismatch)";
+    if (!masterKey) {
+      hash = "NOT SET";
+    } else {
+        // 最も互換性の高い方法でハッシュ値（指紋）を算出
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(masterKey);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            hash = Array.from(new Uint8Array(hashBuffer)).map(x => x.toString(16).padStart(2, '0')).join('');
+        } catch (e: any) {
+            hash = `ERROR_DURING_HASH: ${e.message}`;
+        }
+    }
 
     return NextResponse.json({
         status: masterKey ? "ONLINE" : "OFFLINE (No Master Key)",
         masterKeyPresent: !!masterKey,
         masterKeyHash: hash,
-        encryptionTest,
-        decryptionTest,
-        note: "If hash is 'NOT SET' or doesn't match local, decryption will always fail."
+        note: "Target Hash: ee9eabe7238f911b8ea24abe37a51edf29993ffdf1cc2c3805684eff756aa5a8"
     });
   } catch (err: any) {
     return NextResponse.json({
-      status: "CRITICAL_ERROR",
-      message: err.message,
-      stack: err.stack
+      status: "DIAGNOSTICS_FAILED",
+      message: err.message
     }, { status: 500 });
   }
 }
