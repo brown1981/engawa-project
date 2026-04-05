@@ -33,11 +33,12 @@ export default {
       const availableKeys = Object.keys(env || {});
       console.log(`[Diagnostic] Available Env Keys: ${availableKeys.join(", ") || "(None)"}`);
 
-      const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+      // URL と Key を柔軟に取得 (名前のゆらぎに対応)
+      const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
       if (!supabaseUrl || !supabaseServiceKey) {
-        console.error("[Error] Missing Env Vars. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+        console.error(`[Error] Missing Env Vars. URL=${!!supabaseUrl}, Key=${!!supabaseServiceKey}`);
         return; // 静かに終了して Dropped を回避
       }
 
