@@ -29,6 +29,10 @@ export default {
       
       console.log(`[Step 1] Basic Info: From=${from}, Subject=${subject}`);
 
+      // 診断用：現在 Worker が認識している「カギの名前」をすべてリストアップ
+      const availableKeys = Object.keys(env || {});
+      console.log(`[Diagnostic] Available Env Keys: ${availableKeys.join(", ") || "(None)"}`);
+
       const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
