@@ -2,18 +2,27 @@ import { createClient } from '@supabase/supabase-js';
 import * as crypto from 'node:crypto';
 import { AgentBrain } from '../src/services/agent_brain';
 
-// --- 🛡 Self-contained Decryption Logic (Matching diagnose script) ---
-function decryptSync(encryptedText: string, masterKey: string) {
-  if (!encryptedText || !masterKey) return null;
-  try {
-    const [ivHex, authTagHex, contentHex] = encryptedText.split(':');
-    if (!ivHex || !authTagHex || !contentHex) return null;
+// --- 🛡 Worker-Compatible Decryption Logic ---
+function getCryptoKey(masterKeyStr: string) {
+  const keyData = Buffer.alloc(32, 0);
+  const buf = Buffer.from(masterKeyStr, 'utf8');
+  buf.copy(keyData, 0, 0, Math.min(buf.length, 32));
+  return keyData;
+}
 
+function decryptSync(encryptedText: string, masterKeyStr: string) {
+  if (!encryptedText || !masterKeyStr) return null;
+  try {
+    const [ivHex, combinedHex] = encryptedText.split(':');
+    if (!ivHex || !combinedHex) return null;
+
+    const key = getCryptoKey(masterKeyStr);
     const iv = Buffer.from(ivHex, 'hex');
-    const authTag = Buffer.from(authTagHex, 'hex');
-    const key = crypto.scryptSync(masterKey, 'salt', 32);
+    const authTagHex = combinedHex.slice(-32);
+    const contentHex = combinedHex.slice(0, -32);
+    
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
+    decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
     
     let decrypted = decipher.update(contentHex, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
