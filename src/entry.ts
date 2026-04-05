@@ -70,9 +70,10 @@ export default {
       if (error) {
         console.error('❌ Supabase Insertion Error:', JSON.stringify(error));
         // ここでエラーを投げると Cloudflare 側で "Dropped" になる可能性があるため、
-        // ログを残して静かに終了するか、必要に応じてリトライを検討
       } else {
-        console.log(`✅ SUCCESS: Email stored in record ID: ${data?.[0]?.id || 'unknown'}`);
+        // 型エラーを回避するため、安全にログを出力します
+        const recordId = (data as any)?.[0]?.id || 'unknown';
+        console.log(`✅ SUCCESS: Email stored in record ID: ${recordId}`);
       }
 
     } catch (err: any) {
